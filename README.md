@@ -5,7 +5,7 @@
 
 ## Version Notes
 
-Objective: Get C++ project going with a basic and striped down version of a
+Objective: Get C++ project going with a basic and stripped down version of a
 european call-put option simulation.
 
 * Focused on European Call-Put options
