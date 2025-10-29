@@ -17,3 +17,22 @@ european call-put option simulation.
   * Risk free rate (r)
   * Volatility (σ)  
 * Monte Carlo sample size adjustable through config file
+
+## Project Roadmap
+
+I have documented the vision for this project and the different areas of
+technicalities I would be exploring along the way.
+
+- [ ] `[UPCOMING]` **Implement Black-Scholes analytical formula for validation**
+    - [ ] `[UPCOMING]` Display both Monte Carlo and analytical results with error difference
+    - [ ] `[UPCOMING]` Validate correctness: |MC − BS| < 0.1 for large N
+- [ ] `[UPCOMING]`  Add CLI/config file parameter input
+- [ ] `[UPCOMING]` Include runtime statistics (execution time, sample count)
+- [ ] `[UPCOMING]` Modularize project structure
+- [ ] Add parallelization (std::thread) for faster simulation
+- [ ] Add path-dependent options
+    - [ ] Implement adjustable time-step grid per path
+- [ ] Allow multiple options to be priced in one run
+    - [ ] Output results to CSV/JSON for analysis
+- [ ] Integrate unit tests and CI for validation
+- [ ] Add CMake build system with flags for release/debug
