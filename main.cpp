@@ -85,8 +85,7 @@ int main(int argsc, const char* argsv[]) {
 
     auto bs_dt = duration_cast<std::chrono::milliseconds>(end - start);
 
-    std::println("simulating {} scenarios...", params.sample_count); 
-    std::println("MC payoff = {:.02f} [{}]", mc_payoff, mc_dt); 
+    std::println("MC payoff = {:.02f} [{}][{} samples]", mc_payoff, mc_dt, params.sample_count); 
     std::println("BS payoff = {:.02f} [{}]", bs_payoff, bs_dt); 
     std::println("|MC - BS| = {:.02f}", mc_payoff - bs_payoff); 
 
