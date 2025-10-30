@@ -31,7 +31,7 @@ double payoff_call(const eu_option& option) {
     return discounted_payoff;
 }
 
-double simulate(const eu_option& option, const monte_carlo_parameters& params) {
+double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
     double sample_fraction = 1.0 / params.sample_count;
     double avg_payoff = 0.0;
     for (size_t i = 0; i < params.sample_count; ++i) {
@@ -51,8 +51,10 @@ int main(int argsc, const char* argsv[]) {
     const eu_option op{spot_price, strike_price, time_to_expiry, volatility, risk_free_rate};
     const monte_carlo_parameters params{1000000};
 
+    const mc_payoff = monte_carlo_call_pricing(op, params);
+
     std::println("simulating {} scenarios...", params.sample_count); 
-    std::println("payoff = {:.02f}", simulate(op, params)); 
+    std::println("payoff = {:.02f}", mc_payoff); 
 
     return 0;
 }
