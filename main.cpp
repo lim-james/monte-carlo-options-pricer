@@ -2,6 +2,7 @@
 #include <random>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 
 #include "eu_option.h" 
 #include "monte_carlo_parameters.h" 
@@ -72,12 +73,22 @@ int main(int argsc, const char* argsv[]) {
     const eu_option op{spot_price, strike_price, time_to_expiry, volatility, risk_free_rate};
     const monte_carlo_parameters params{1000000};
 
+    auto start = std::chrono::high_resolution_clock::now();
     const double mc_payoff = monte_carlo_call_pricing(op, params);
+    auto end = std::chrono::high_resolution_clock::now();
+    
+    auto mc_dt = duration_cast<std::chrono::milliseconds>(end - start);
+
+    start = std::chrono::high_resolution_clock::now();
     const double bs_payoff = black_scholes_call_pricing(op);
+    end = std::chrono::high_resolution_clock::now();
+
+    auto bs_dt = duration_cast<std::chrono::milliseconds>(end - start);
 
     std::println("simulating {} scenarios...", params.sample_count); 
-    std::println("mc payoff = {:.02f}", mc_payoff); 
-    std::println("bs payoff = {:.02f}", bs_payoff); 
+    std::println("MC payoff = {:.02f} [{}]", mc_payoff, mc_dt); 
+    std::println("BS payoff = {:.02f} [{}]", bs_payoff, bs_dt); 
+    std::println("|MC - BS| = {:.02f}", mc_payoff - bs_payoff); 
 
     return 0;
 }
