@@ -3,6 +3,8 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <thread>
+#include <functional>
 
 double grow(const eu_option& option) {
     static std::random_device rd;
@@ -29,12 +31,45 @@ double payoff_call(const eu_option& option) {
     return discounted_payoff;
 }
 
-double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
-    double sample_fraction = 1.0 / params.sample_count;
+void monte_carlo_call_pricing_batch(
+    const eu_option& option, 
+    size_t batch_size,
+    double* payoff_mem
+) {
+    double batch_fraction = 1.0 / batch_size;
     double avg_payoff = 0.0;
-    for (size_t i = 0; i < params.sample_count; ++i) {
+    for (size_t i = 0; i < batch_size; ++i) {
         double payoff = payoff_call(option);
-        avg_payoff += payoff * sample_fraction;
+        avg_payoff += payoff * batch_fraction;
     }
+    *payoff_mem = avg_payoff;
+}
+
+
+double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
+    const unsigned int num_threads = 3; //std::thread::hardware_concurrency();
+    std::vector<double> avg_payoffs(num_threads); 
+    std::vector<std::thread> threads; 
+    threads.reserve(num_threads);
+
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        threads.emplace_back(
+            monte_carlo_call_pricing_batch, 
+            std::ref(option), 
+            params.sample_count / num_threads,
+            &avg_payoffs[i]
+        );
+    }
+
+    for (auto it = threads.rbegin(); it != threads.rend(); ++it) {
+        it->join();
+    }
+
+    double sample_fraction = 1.0 / num_threads;
+    double avg_payoff = 0.0;
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        avg_payoff += avg_payoffs[i] * sample_fraction;
+    }
+
     return avg_payoff;
 }
