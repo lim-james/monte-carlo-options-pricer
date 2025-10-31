@@ -1,10 +1,8 @@
-#include <print>
-#include <random>
-#include <cmath>
-#include <algorithm>
+#include "monte_carlo.h"
 
-#include "eu_option.h" 
-#include "monte_carlo_parameters.h" 
+#include <random>
+#include <algorithm>
+#include <cmath>
 
 double grow(const eu_option& option) {
     static std::random_device rd;
@@ -31,7 +29,7 @@ double payoff_call(const eu_option& option) {
     return discounted_payoff;
 }
 
-double simulate(const eu_option& option, const monte_carlo_parameters& params) {
+double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
     double sample_fraction = 1.0 / params.sample_count;
     double avg_payoff = 0.0;
     for (size_t i = 0; i < params.sample_count; ++i) {
@@ -39,20 +37,4 @@ double simulate(const eu_option& option, const monte_carlo_parameters& params) {
         avg_payoff += payoff * sample_fraction;
     }
     return avg_payoff;
-}
-
-int main(int argsc, const char* argsv[]) {
-    const double spot_price = 100;
-    const double strike_price = 100;
-    const double time_to_expiry = 1.0;
-    const double risk_free_rate = 0.05;
-    const double volatility = 0.2;
-
-    const eu_option op{spot_price, strike_price, time_to_expiry, volatility, risk_free_rate};
-    const monte_carlo_parameters params{1000000};
-
-    std::println("simulating {} scenarios...", params.sample_count); 
-    std::println("payoff = {:.02f}", simulate(op, params)); 
-
-    return 0;
 }
