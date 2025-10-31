@@ -5,6 +5,20 @@
 
 ## Version Notes
 
+### v0.3.0
+
+```
+1 options // 100000000 samples
+MC payoff = 10.45 [8352ms]
+BS payoff = 10.45 [0ms]
+|MC - BS| = -0.00
+```
+> I tested the following scenario and this disparity in time is unacceptable
+> Like sure, I can't be comparing a math eq to a simulation, but let's try to
+> cut it down a little
+
+- Add parallelization (std::thread) for faster simulation
+
 
 ### v0.2.0
 
@@ -37,7 +51,6 @@ european call-put option simulation.
 I have documented the vision for this project and the different areas of
 technicalities I would be exploring along the way.
 
-- [ ] Add parallelization (std::thread) for faster simulation
 - [ ] Add path-dependent options
     - [ ] Implement adjustable time-step grid per path
 - [ ] Allow multiple options to be priced in one run
