@@ -28,10 +28,10 @@ double discount(double future_price, double rate, double time_to_expiry) {
 
 double payoff(const eu_option& option) {
     double future_price = grow(option);
-    double payoff = option.type == OptionType::Call 
+    double raw_payoff = option.type == OptionType::Call 
         ? std::max(future_price - option.strike, 0.0)
         : std::max(option.strike - future_price, 0.0);
-    double discounted_payoff = discount(payoff, option.rate, option.expiry);
+    double discounted_payoff = discount(raw_payoff, option.rate, option.expiry);
     return discounted_payoff;
 }
 
