@@ -51,7 +51,7 @@ the same time then we have got an issue. With `rd`, `gen` and `dist` being
 contention everytime random is called. Cache line bounces between the threads
 and boom we have **false sharing**. Let's fix it.
 
-**FIX 1: use `thread_local` over `static`
+**FIX 1: use `thread_local` over `static`**
 ```
 1 options // 100000000 samples 
 threads  time (ms) 
@@ -66,6 +66,23 @@ threads  time (ms)
 ```
 With `thread_local` each thread manages their respective randomisations. No more
 contention.
+
+**FIX 2: pad results with `alignas(64)`**
+```
+1 options // 100000000 samples 
+threads  time (ms)  aligned
+      1       9039     8908   
+      2       4480     4588   
+      3       3164     3158   
+      4       2362     2350   
+      6       1584     1585   
+      8       1218     1202   
+     10       1109     1119   
+     12       1086     1031   
+```
+Honestly the difference is minimal because of the number of contentions being at
+most 12 (my max cores), but was fun to give it a try.
+
 
 ### v0.2.0
 

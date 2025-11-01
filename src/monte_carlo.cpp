@@ -34,7 +34,7 @@ double payoff_call(const eu_option& option) {
 void monte_carlo_call_pricing_batch(
     const eu_option& option, 
     size_t batch_size,
-    double* payoff_mem
+    aligned_double* payoff_mem
 ) {
     double batch_fraction = 1.0 / batch_size;
     double avg_payoff = 0.0;
@@ -42,12 +42,11 @@ void monte_carlo_call_pricing_batch(
         double payoff = payoff_call(option);
         avg_payoff += payoff * batch_fraction;
     }
-    *payoff_mem = avg_payoff;
+    payoff_mem->x = avg_payoff;
 }
 
-
 double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
-    std::vector<double> avg_payoffs(params.thread_count); 
+    std::vector<aligned_double> avg_payoffs(params.thread_count); 
     std::vector<std::thread> threads; 
     threads.reserve(params.thread_count);
 
@@ -67,7 +66,7 @@ double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_param
     double sample_fraction = 1.0 / params.thread_count;
     double avg_payoff = 0.0;
     for (unsigned int i = 0; i < params.thread_count; ++i) {
-        avg_payoff += avg_payoffs[i] * sample_fraction;
+        avg_payoff += avg_payoffs[i].x * sample_fraction;
     }
 
     return avg_payoff;
