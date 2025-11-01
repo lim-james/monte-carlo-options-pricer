@@ -1,9 +1,15 @@
-# Monte Carlo Options Pricer [v0.3.0]
+# Monte Carlo Options Pricer [v0.4.0]
 
 > Studying quantitative finance fundamentals (options, bonds, discount curves) 
 > through hands-on implementation of pricing models and risk calculations
 
 ## Version Notes
+
+### v0.4.0
+
+- Allow multiple options to be priced in one run
+    - Output results to CSV for analysis
+- Add put options
 
 ### v0.3.0
 
@@ -138,7 +144,5 @@ technicalities I would be exploring along the way.
 
 - [ ] Add path-dependent options
     - [ ] Implement adjustable time-step grid per path
-- [ ] Allow multiple options to be priced in one run
-    - [ ] Output results to CSV/JSON for analysis
 - [ ] Integrate unit tests and CI for validation
 - [ ] Add CMake build system with flags for release/debug
