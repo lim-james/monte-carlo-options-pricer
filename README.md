@@ -19,6 +19,26 @@ BS payoff = 10.45 [0ms]
 
 - Add parallelization (std::thread) for faster simulation
 
+**Observation**
+```
+1 options // 100000000 samples // 12 threads
+MC payoff = 10.46 [10516ms]
+BS payoff = 10.45 [0ms]
+|MC - BS| = 0.01
+
+1 options // 100000000 samples // 1 threads
+MC payoff = 10.45 [8569ms]
+BS payoff = 10.45 [0ms]
+|MC - BS| = 0.00
+
+1 options // 100000000 samples // 2 threads
+MC payoff = 10.45 [7005ms]
+BS payoff = 10.45 [0ms]
+|MC - BS| = 0.00
+```
+> There was an improvement from 1 -> 2 threads, but upon maximising all 12 cores
+> things started to breakdown. Time to investigate.
+
 
 ### v0.2.0
 
