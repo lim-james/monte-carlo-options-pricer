@@ -47,16 +47,15 @@ void monte_carlo_call_pricing_batch(
 
 
 double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
-    const unsigned int num_threads = 3; //std::thread::hardware_concurrency();
-    std::vector<double> avg_payoffs(num_threads); 
+    std::vector<double> avg_payoffs(params.thread_count); 
     std::vector<std::thread> threads; 
-    threads.reserve(num_threads);
+    threads.reserve(params.thread_count);
 
-    for (unsigned int i = 0; i < num_threads; ++i) {
+    for (unsigned int i = 0; i < params.thread_count; ++i) {
         threads.emplace_back(
             monte_carlo_call_pricing_batch, 
             std::ref(option), 
-            params.sample_count / num_threads,
+            params.sample_count / params.thread_count,
             &avg_payoffs[i]
         );
     }
@@ -65,9 +64,9 @@ double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_param
         it->join();
     }
 
-    double sample_fraction = 1.0 / num_threads;
+    double sample_fraction = 1.0 / params.thread_count;
     double avg_payoff = 0.0;
-    for (unsigned int i = 0; i < num_threads; ++i) {
+    for (unsigned int i = 0; i < params.thread_count; ++i) {
         avg_payoff += avg_payoffs[i] * sample_fraction;
     }
 
