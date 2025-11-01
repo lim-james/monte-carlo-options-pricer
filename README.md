@@ -21,30 +21,16 @@ BS payoff = 10.45 [0ms]
 
 **Observation**
 ```
-1 options // 100000000 samples // 12 threads
-MC payoff = 10.46 [10516ms]
-
-1 options // 100000000 samples // 1 threads
-MC payoff = 10.45 [8569ms]    <<< starting
-
-1 options // 100000000 samples // 2 threads
-MC payoff = 10.45 [7005ms]    <<< improvement
-
-[1 options // 100000000 samples // 3 threads
-MC payoff = 10.46 [6281ms]    <<< improvement
-
-1 options // 100000000 samples // 4 threads
-MC payoff = 10.45 [6568ms]    <<< slight tank in performance
-
-1 options // 100000000 samples // 6 threads
-MC payoff = 10.44 [7187ms]    <<< drop in performance (still better than 1) 
-
-1 options // 100000000 samples // 8 threads
-MC payoff = 10.43 [7589ms]    <<< drop again
-
-1 options // 100000000 samples // 10 threads
-MC payoff = 10.46 [10262ms]   <<< oof this is bad
-
+1 options // 100000000 samples 
+threads  time (ms) 
+      1       8569   starting
+      2       7005   improvement
+      3       6281   improvement
+      4       6568   slight tank in performance
+      6       7187   drop in performance (still better than 1) 
+      8       7589   drop again
+     10      10262   oof this is bad
+     12      10516   ...
 ```
 > There was an improvement from 1 -> 2 threads, but upon maximising all 12 cores
 > things started to breakdown. Time to investigate.
@@ -65,6 +51,21 @@ the same time then we have got an issue. With `rd`, `gen` and `dist` being
 contention everytime random is called. Cache line bounces between the threads
 and boom we have **false sharing**. Let's fix it.
 
+**FIX 1: use `thread_local` over `static`
+```
+1 options // 100000000 samples 
+threads  time (ms) 
+      1       9039   starting
+      2       4480   DAMN double threads, double perf
+      3       3164   TRIPLE
+      4       2362   QUAD
+      6       1584   PROPORTION DROPS
+      8       1218   this is just great
+     10       1109   alright im quite satisfied with this
+     12       1086   I should be expecting < 1000ms in an ideal world
+```
+With `thread_local` each thread manages their respective randomisations. No more
+contention.
 
 ### v0.2.0
 

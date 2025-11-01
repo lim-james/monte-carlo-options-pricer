@@ -7,9 +7,9 @@
 #include <functional>
 
 double grow(const eu_option& option) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::normal_distribution<> dist(0.0, 1.0);
+    thread_local std::random_device rd;
+    thread_local std::mt19937 gen(rd());
+    thread_local std::normal_distribution<> dist(0.0, 1.0);
 
     double Z = dist(gen);
 
