@@ -1,4 +1,4 @@
-# Monte Carlo Options Pricer [v0.1.0]
+# Monte Carlo Options Pricer [v0.3.0]
 
 > Studying quantitative finance fundamentals (options, bonds, discount curves) 
 > through hands-on implementation of pricing models and risk calculations
