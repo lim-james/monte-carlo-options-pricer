@@ -6,9 +6,6 @@
 #include <thread>
 #include <functional>
 
-struct alignas(64) aligned_double {
-    double x;
-};
 
 double grow(const eu_option& option) {
     thread_local std::random_device rd;
@@ -38,7 +35,7 @@ double payoff_call(const eu_option& option) {
 void monte_carlo_call_pricing_batch(
     const eu_option& option, 
     size_t batch_size,
-    aligned_double* payoff_mem
+    double* payoff_mem
 ) {
     double batch_fraction = 1.0 / batch_size;
     double avg_payoff = 0.0;
@@ -46,11 +43,21 @@ void monte_carlo_call_pricing_batch(
         double payoff = payoff_call(option);
         avg_payoff += payoff * batch_fraction;
     }
-    payoff_mem->x = avg_payoff;
+    *payoff_mem = avg_payoff;
 }
 
+#ifdef TEST_ALIGNED
+struct alignas(64) aligned_double {
+    double x;
+};
+#endif
+
 double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
+#ifdef TEST_ALIGNED
     std::vector<aligned_double> avg_payoffs(params.thread_count); 
+#else
+    std::vector<double> avg_payoffs(params.thread_count); 
+#endif
     std::vector<std::thread> threads; 
     threads.reserve(params.thread_count);
 
@@ -59,7 +66,11 @@ double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_param
             monte_carlo_call_pricing_batch, 
             std::ref(option), 
             params.sample_count / params.thread_count,
+#ifdef TEST_ALIGNED
+            &(avg_payoffs[i].x)
+#else
             &avg_payoffs[i]
+#endif
         );
     }
 
@@ -70,7 +81,11 @@ double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_param
     double sample_fraction = 1.0 / params.thread_count;
     double avg_payoff = 0.0;
     for (unsigned int i = 0; i < params.thread_count; ++i) {
+#ifdef TEST_ALIGNED
         avg_payoff += avg_payoffs[i].x * sample_fraction;
+#else
+        avg_payoff += avg_payoffs[i] * sample_fraction;
+#endif
     }
 
     return avg_payoff;
