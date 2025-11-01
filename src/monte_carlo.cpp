@@ -6,6 +6,10 @@
 #include <thread>
 #include <functional>
 
+struct alignas(64) aligned_double {
+    double x;
+};
+
 double grow(const eu_option& option) {
     thread_local std::random_device rd;
     thread_local std::mt19937 gen(rd());
