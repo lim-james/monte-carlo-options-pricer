@@ -4,6 +4,6 @@
 #include "eu_option.h"
 #include "monte_carlo_parameters.h"
 
-double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params);
+double monte_carlo_pricing(const eu_option& option, const monte_carlo_parameters& params);
 
 #endif 

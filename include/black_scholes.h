@@ -3,6 +3,6 @@
 
 #include "eu_option.h"
 
-double black_scholes_call_pricing(const eu_option& option);
+double black_scholes_pricing(const eu_option& option);
 
 #endif

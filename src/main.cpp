@@ -33,13 +33,13 @@ int main(int argsc, const char* argsv[]) {
 
     for (const eu_option& option: eu_options_list) {
         auto start = std::chrono::high_resolution_clock::now();
-        const double mc_payoff = monte_carlo_call_pricing(option, params);
+        const double mc_payoff = monte_carlo_pricing(option, params);
         auto end = std::chrono::high_resolution_clock::now();
         
         auto mc_dt = duration_cast<std::chrono::milliseconds>(end - start);
 
         start = std::chrono::high_resolution_clock::now();
-        const double bs_payoff = black_scholes_call_pricing(option);
+        const double bs_payoff = black_scholes_pricing(option);
         end = std::chrono::high_resolution_clock::now();
 
         auto bs_dt = duration_cast<std::chrono::milliseconds>(end - start);
