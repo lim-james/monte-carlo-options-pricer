@@ -83,6 +83,27 @@ threads  time (ms)  aligned
 Honestly the difference is minimal because of the number of contentions being at
 most 12 (my max cores), but was fun to give it a try.
 
+**JUST FOR FUN**
+```
+1 options // 1000000000 samples // 12 threads
+Non-aligned  13640ms
+Aligned      11718ms
+```
+I wanted to see the latency difference as a result of false sharing so I adapted
+the code temporarily to write directly to the memory on every iteration.
+```c++
+void monte_carlo_call_pricing_batch(
+    // ...
+    double* payoff_mem
+) {
+    for (size_t i = 0; i < batch_size; ++i) {
+        // ...
+        // directly writing to shared resource every on every iteration
+        *payoff_mem += payoff * batch_fraction; 
+    }
+}
+```
+
 
 ### v0.2.0
 
