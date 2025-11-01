@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <string>
+#include <thread>
 
 #include "rapidcsv.h"
 #include "monte_carlo.h"
@@ -19,10 +20,16 @@ int main(int argsc, const char* argsv[]) {
     }
     auto eu_options_list = load_options_from_csv(argsv[1]);
 
-    const uint32_t sample_count = argsc > 2 ? std::stoi(argsv[2]) : 1000000;
-    const monte_carlo_parameters params{sample_count};
+    const uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
+    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : std::thread::hardware_concurrency();
+    const monte_carlo_parameters params{sample_count, thread_count};
 
-    std::println("{} options // {} samples", eu_options_list.size(), params.sample_count);
+    std::println(
+        "{} options // {} samples // {} threads", 
+        eu_options_list.size(), 
+        params.sample_count,
+        params.thread_count
+    );
 
     for (const eu_option& option: eu_options_list) {
         auto start = std::chrono::high_resolution_clock::now();
