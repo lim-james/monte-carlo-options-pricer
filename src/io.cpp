@@ -11,6 +11,7 @@ enum OptionCSVColumn {
     COL_RATE,
 };
 
+[[nodiscard("Loaded options unused")]] 
 std::vector<eu_option> load_options_from_csv(const char* filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 

@@ -5,6 +5,7 @@
 
 #include "eu_option.h"
 
+[[nodiscard("Loaded options unused")]] 
 std::vector<eu_option> load_options_from_csv(const char* filepath);
 void save_payoffs_to_csv(const char* filepath, const std::vector<double>& payoffs);
 
