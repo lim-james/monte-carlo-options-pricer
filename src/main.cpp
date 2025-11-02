@@ -31,10 +31,15 @@ int main(int argsc, const char* argsv[]) {
         params.thread_count
     );
 
+    std::vector<double> payoffs;
+    payoffs.reserve(eu_options_list.size());
+
     for (const eu_option& option: eu_options_list) {
         auto start = std::chrono::high_resolution_clock::now();
         const double mc_payoff = monte_carlo_pricing(option, params);
         auto end = std::chrono::high_resolution_clock::now();
+
+        payoffs.emplace_back(mc_payoff);
         
         auto mc_dt = duration_cast<std::chrono::milliseconds>(end - start);
 
@@ -48,6 +53,8 @@ int main(int argsc, const char* argsv[]) {
         std::println("BS payoff = {:.02f} [{}]", bs_payoff, bs_dt); 
         std::println("|MC - BS| = {:.02f}", mc_payoff - bs_payoff); 
     }
+
+    save_payoffs_to_csv("./output.csv", payoffs);
 
     return 0;
 }

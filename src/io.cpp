@@ -30,3 +30,16 @@ std::vector<eu_option> load_options_from_csv(const char* filepath) {
 
     return options_list;
 }
+
+void save_payoffs_to_csv(const char* filepath, const std::vector<double>& payoffs) {
+    rapidcsv::Document csv;
+
+    static const std::vector<std::string> header = {"Payoff"};
+    csv.SetRow(-1, header);
+
+    for (size_t i = 0; i < payoffs.size(); ++i) {
+        csv.SetCell(0, i, payoffs[i]);
+    }
+
+    csv.Save(filepath);
+}
