@@ -22,7 +22,7 @@ double grow(const eu_option& option) {
     return option.spot * c;
 }
 
-double discount(double future_price, double rate, double time_to_expiry) {
+inline double discount(double future_price, double rate, double time_to_expiry) {
     return future_price * exp(-rate * time_to_expiry);
 }
 
