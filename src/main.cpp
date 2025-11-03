@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include <numeric>
+#include <functional>
 
 #include "rapidcsv.h"
 #include "monte_carlo.h"
@@ -32,6 +33,22 @@ double stdev(const std::vector<double>& sample, double mean) {
     return std::sqrt(acc / sample.size());
 }
 
+double eval_delta(
+    const eu_option& option, 
+    std::function<double(const eu_option&)> pricing_fn
+) {
+    const double h = 0.01 * option.spot;
+    eu_option option_up = option;
+    option_up.spot += h;
+    const double up_payoff = pricing_fn(option_up);   
+
+    eu_option option_dn = option;
+    option_dn.spot -= h;
+    const double dn_payoff = pricing_fn(option_dn);   
+
+    return (up_payoff - dn_payoff) / (2 * h);
+}
+
 int main(int argsc, const char* argsv[]) {
     if (argsc <= 1) {
         std::println("Please provide a .csv filepath");
@@ -43,6 +60,8 @@ int main(int argsc, const char* argsv[]) {
     const uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
     const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : std::thread::hardware_concurrency();
     const monte_carlo_parameters params{sample_count, thread_count};
+
+    const auto mc_pricing = std::bind(monte_carlo_pricing, std::placeholders::_1, std::cref(params));
 
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
@@ -57,16 +76,20 @@ int main(int argsc, const char* argsv[]) {
 
     for (const eu_option& option: eu_options_list) {
         auto start = hr_clock_t::now();
-        const double mc_payoff = monte_carlo_pricing(option, params);
+        const double mc_payoff = mc_pricing(option);
         auto end = hr_clock_t::now();
         
         auto mc_dt = ms_t(end - start).count();
+
+        std::println("delta MC: {}", eval_delta(option, mc_pricing));
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
         end = hr_clock_t::now();
 
         auto bs_dt = ms_t(end - start).count();
+
+        std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
 
         payoffs.emplace_back(mc_payoff);
         mc_times.emplace_back(mc_dt);
