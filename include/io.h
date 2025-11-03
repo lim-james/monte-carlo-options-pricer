@@ -5,14 +5,8 @@
 
 #include "eu_option.h"
 
-enum OptionCSVColumn {
-    COL_SPOT,
-    COL_STRIKE,
-    COL_EXPIRY,
-    COL_VOLATILITY,
-    COL_RATE,
-};
-
+[[nodiscard("Loaded options unused")]] 
 std::vector<eu_option> load_options_from_csv(const char* filepath);
+void save_payoffs_to_csv(const char* filepath, const std::vector<double>& payoffs);
 
 #endif

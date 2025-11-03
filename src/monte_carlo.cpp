@@ -6,6 +6,7 @@
 #include <thread>
 #include <functional>
 
+#define TEST_ALIGNED
 
 double grow(const eu_option& option) {
     thread_local std::random_device rd;
@@ -21,18 +22,20 @@ double grow(const eu_option& option) {
     return option.spot * c;
 }
 
-double discount(double future_price, double rate, double time_to_expiry) {
+inline double discount(double future_price, double rate, double time_to_expiry) {
     return future_price * exp(-rate * time_to_expiry);
 }
 
-double payoff_call(const eu_option& option) {
+double payoff(const eu_option& option) {
     double future_price = grow(option);
-    double payoff = std::max(future_price - option.strike, 0.0);
-    double discounted_payoff = discount(payoff, option.rate, option.expiry);
+    double raw_payoff = option.type == OptionType::Call 
+        ? std::max(future_price - option.strike, 0.0)
+        : std::max(option.strike - future_price, 0.0);
+    double discounted_payoff = discount(raw_payoff, option.rate, option.expiry);
     return discounted_payoff;
 }
 
-void monte_carlo_call_pricing_batch(
+void monte_carlo_pricing_batch(
     const eu_option& option, 
     size_t batch_size,
     double* payoff_mem
@@ -40,8 +43,7 @@ void monte_carlo_call_pricing_batch(
     double batch_fraction = 1.0 / batch_size;
     double avg_payoff = 0.0;
     for (size_t i = 0; i < batch_size; ++i) {
-        double payoff = payoff_call(option);
-        avg_payoff += payoff * batch_fraction;
+        avg_payoff += payoff(option) * batch_fraction;
     }
     *payoff_mem = avg_payoff;
 }
@@ -52,18 +54,19 @@ struct alignas(64) aligned_double {
 };
 #endif
 
-double monte_carlo_call_pricing(const eu_option& option, const monte_carlo_parameters& params) {
+double monte_carlo_pricing(const eu_option& option, const monte_carlo_parameters& params) {
 #ifdef TEST_ALIGNED
     std::vector<aligned_double> avg_payoffs(params.thread_count); 
 #else
     std::vector<double> avg_payoffs(params.thread_count); 
 #endif
+
     std::vector<std::thread> threads; 
     threads.reserve(params.thread_count);
 
     for (unsigned int i = 0; i < params.thread_count; ++i) {
         threads.emplace_back(
-            monte_carlo_call_pricing_batch, 
+            monte_carlo_pricing_batch, 
             std::ref(option), 
             params.sample_count / params.thread_count,
 #ifdef TEST_ALIGNED

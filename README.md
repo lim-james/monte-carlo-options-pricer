@@ -1,9 +1,28 @@
-# Monte Carlo Options Pricer [v0.3.0]
+# Monte Carlo Options Pricer [v0.4.0]
 
 > Studying quantitative finance fundamentals (options, bonds, discount curves) 
 > through hands-on implementation of pricing models and risk calculations
 
 ## Version Notes
+
+### v0.4.0
+
+- Allow multiple options to be priced in one run
+    - Output results to CSV for analysis
+- Add put options
+
+**OBSERVATION**
+```c++
+double payoff(const eu_option& option) {
+    // ...
+    double raw_payoff = option.type == OptionType::Call 
+        ? std::max(future_price - option.strike, 0.0)
+        : std::max(option.strike - future_price, 0.0);
+    // ...
+}
+```
+There's a conditional here in my hot loop, so of course I'm curious to take the
+chance to profile predictive branching. Time to spin up my Pi.
 
 ### v0.3.0
 
@@ -19,7 +38,7 @@ BS payoff = 10.45 [0ms]
 
 - Add parallelization (std::thread) for faster simulation
 
-**Observation**
+**OBSERVATION**
 ```
 1 options // 100000000 samples 
 threads  time (ms) 
@@ -138,7 +157,5 @@ technicalities I would be exploring along the way.
 
 - [ ] Add path-dependent options
     - [ ] Implement adjustable time-step grid per path
-- [ ] Allow multiple options to be priced in one run
-    - [ ] Output results to CSV/JSON for analysis
 - [ ] Integrate unit tests and CI for validation
 - [ ] Add CMake build system with flags for release/debug
