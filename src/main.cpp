@@ -7,6 +7,8 @@
 #include <thread>
 #include <numeric>
 
+#include "eu_option_out.h"
+
 #include "rapidcsv.h"
 #include "monte_carlo.h"
 #include "black_scholes.h"
@@ -141,8 +143,8 @@ int main(int argsc, const char* argsv[]) {
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
-    std::vector<double> payoffs;
-    payoffs.reserve(num_options);
+    std::vector<eu_option_out> priced_options;
+    priced_options.reserve(num_options);
 
     std::vector<double> mc_times, bs_times, diffs;
     mc_times.reserve(num_options);
@@ -162,11 +164,11 @@ int main(int argsc, const char* argsv[]) {
         
         auto mc_dt = ms_t(end - start).count();
 
-        std::println("[MC] delta : {:.03f}", eval_delta(option, mc_pricing));
-        std::println("[MC] gamma : {:.03f}", eval_gamma(option, mc_pricing));
-        std::println("[MC] vega  : {:.03f}", eval_vega(option, mc_pricing));
-        std::println("[MC] theta : {:.03f}", eval_theta(option, mc_pricing));
-        std::println("[MC] rho   : {:.03f}", eval_rho(option, mc_pricing));
+        double delta = eval_delta(option, mc_pricing);
+        double gamma = eval_gamma(option, mc_pricing);
+        double vega = eval_vega(option, mc_pricing);
+        double theta = eval_theta(option, mc_pricing);
+        double rho = eval_rho(option, mc_pricing);
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
@@ -174,15 +176,28 @@ int main(int argsc, const char* argsv[]) {
 
         auto bs_dt = ms_t(end - start).count();
 
-        std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
+        // std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
 
-        payoffs.emplace_back(mc_payoff);
+        priced_options.emplace_back(eu_option_out{
+            option.type,
+            option.spot,
+            option.strike,
+            option.expiry,
+            option.volatility,
+            option.rate,
+            mc_payoff,
+            delta,
+            gamma,
+            vega,
+            rho,
+            theta
+        });
         mc_times.emplace_back(mc_dt);
         bs_times.emplace_back(bs_dt);
         diffs.emplace_back(mc_payoff - bs_payoff);
     }
 
-    save_payoffs_to_csv("./output.csv", payoffs);
+    save_options_to_csv("./output.csv", priced_options);
 
     perf_stats st;
     st.mc_ms_total     = std::accumulate(mc_times.begin(), mc_times.end(), 0.0);
