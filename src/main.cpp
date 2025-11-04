@@ -44,7 +44,8 @@ int main(int argsc, const char* argsv[]) {
     auto eu_options_list = load_options_from_csv(argsv[1]);
 
     const uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
-    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : std::thread::hardware_concurrency();
+    const uint32_t max_threads  = std::thread::hardware_concurrency();
+    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
     const monte_carlo_parameters params{sample_count, thread_count};
 
     const size_t num_options = eu_options_list.size();
@@ -73,9 +74,9 @@ int main(int argsc, const char* argsv[]) {
 
         double delta = greeks::delta(option, mc_pricing);
         double gamma = greeks::gamma(option, mc_pricing);
-        double vega = greeks::vega(option, mc_pricing);
+        double vega  = greeks::vega(option, mc_pricing);
         double theta = greeks::theta(option, mc_pricing);
-        double rho = greeks::rho(option, mc_pricing);
+        double rho   = greeks::rho(option, mc_pricing);
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
