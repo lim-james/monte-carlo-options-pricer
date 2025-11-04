@@ -1,7 +1,7 @@
 #ifndef EU_OPTION_H
 #define EU_OPTION_H
 
-enum class OptionType: char { Call, Put };
+#include "option_type.h"
 
 struct eu_option {
     OptionType type;

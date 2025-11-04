@@ -7,6 +7,9 @@
 #include <thread>
 #include <numeric>
 
+#include "greeks.hpp"
+#include "eu_option_out.h"
+
 #include "rapidcsv.h"
 #include "monte_carlo.h"
 #include "black_scholes.h"
@@ -41,26 +44,39 @@ int main(int argsc, const char* argsv[]) {
     auto eu_options_list = load_options_from_csv(argsv[1]);
 
     const uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
-    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : std::thread::hardware_concurrency();
+    const uint32_t max_threads  = std::thread::hardware_concurrency();
+    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
     const monte_carlo_parameters params{sample_count, thread_count};
 
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
-    std::vector<double> payoffs;
-    payoffs.reserve(num_options);
+    std::vector<eu_option_out> priced_options;
+    priced_options.reserve(num_options);
 
     std::vector<double> mc_times, bs_times, diffs;
     mc_times.reserve(num_options);
     bs_times.reserve(num_options);
     diffs.reserve(num_options);
 
+    std::random_device rd;
     for (const eu_option& option: eu_options_list) {
+        const unsigned int seed = rd();
+        const auto mc_pricing = [&params, seed](const eu_option& op) {
+            return monte_carlo_pricing(op, params, seed); 
+        };
+
         auto start = hr_clock_t::now();
-        const double mc_payoff = monte_carlo_pricing(option, params);
+        const double mc_payoff = mc_pricing(option);
         auto end = hr_clock_t::now();
         
         auto mc_dt = ms_t(end - start).count();
+
+        double delta = greeks::delta(option, mc_pricing);
+        double gamma = greeks::gamma(option, mc_pricing);
+        double vega  = greeks::vega(option, mc_pricing);
+        double theta = greeks::theta(option, mc_pricing);
+        double rho   = greeks::rho(option, mc_pricing);
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
@@ -68,13 +84,28 @@ int main(int argsc, const char* argsv[]) {
 
         auto bs_dt = ms_t(end - start).count();
 
-        payoffs.emplace_back(mc_payoff);
+        // std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
+
+        priced_options.emplace_back(eu_option_out{
+            option.type,
+            option.spot,
+            option.strike,
+            option.expiry,
+            option.volatility,
+            option.rate,
+            mc_payoff,
+            delta,
+            gamma,
+            vega,
+            rho,
+            theta
+        });
         mc_times.emplace_back(mc_dt);
         bs_times.emplace_back(bs_dt);
         diffs.emplace_back(mc_payoff - bs_payoff);
     }
 
-    save_payoffs_to_csv("./output.csv", payoffs);
+    save_options_to_csv("./output.csv", priced_options);
 
     perf_stats st;
     st.mc_ms_total     = std::accumulate(mc_times.begin(), mc_times.end(), 0.0);

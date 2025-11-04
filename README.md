@@ -1,9 +1,19 @@
-# Monte Carlo Options Pricer [v0.4.0]
+# Monte Carlo Options Pricer [v0.5.0]
 
 > Studying quantitative finance fundamentals (options, bonds, discount curves) 
 > through hands-on implementation of pricing models and risk calculations
 
 ## Version Notes
+
+### v0.5.0
+
+- Explore Greeks
+  - How to calculate them w/ Black-Scholes formula + w/ Monte-Carlo using finite
+    difference methods
+- `thread_local` randoms didn't allow me to control seeds and was adding noise
+to greek values. So I refactored it to pass in a seed instead.
+  
+
 
 ### v0.4.0
 
@@ -155,9 +165,6 @@ european call-put option simulation.
 I have documented the vision for this project and the different areas of
 technicalities I would be exploring along the way.
 
-- [v0.5.0] Greeks
-  - How to calculate them w/ Black-Scholes formula + w/ Monte-Carlo using finite
-    difference methods
 - [v0.6.0] Variance Reduction 
 - [v0.7.0] Performance + Instrumentation
   - Optimising and playing with different performance tools
