@@ -7,6 +7,7 @@
 #include <thread>
 #include <numeric>
 
+#include "greeks.hpp"
 #include "eu_option_out.h"
 
 #include "rapidcsv.h"
@@ -32,100 +33,6 @@ double stdev(const std::vector<double>& sample, double mean) {
     double acc = 0.0;
     for (auto x: sample) acc += (x - mean) * (x - mean);
     return std::sqrt(acc / sample.size());
-}
-
-inline double eval_finite_step(double value) {
-    return 0.01 * value;
-}
-
-template<typename PricingFn>
-inline double eval_finite_difference_first(
-    const eu_option& up, 
-    const eu_option& dn,
-    double h,
-    PricingFn&& pricing_fn
-) {
-    const double up_payoff = pricing_fn(up);   
-    const double dn_payoff = pricing_fn(dn);   
-    return (up_payoff - dn_payoff) / (2 * h);
-}
-
-template<typename PricingFn>
-double eval_delta(
-    const eu_option& option, 
-    PricingFn&& pricing_fn
-) {
-    const double h = eval_finite_step(option.spot);
-    eu_option option_up = option;
-    option_up.spot += h;
-
-    eu_option option_dn = option;
-    option_dn.spot -= h;
-
-    return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
-}
-
-template<typename PricingFn>
-double eval_gamma(
-    const eu_option& option, 
-    PricingFn&& pricing_fn
-) {
-    const double h = eval_finite_step(option.spot);
-    eu_option option_up = option;
-    option_up.spot += h;
-
-    eu_option option_dn = option;
-    option_dn.spot -= h;
-
-    const double payoff = pricing_fn(option);
-    const double up_payoff = pricing_fn(option_up);   
-    const double dn_payoff = pricing_fn(option_dn);   
-    return (up_payoff - 2 * payoff + dn_payoff) / (h * h);
-}
-
-template<typename PricingFn>
-double eval_vega(
-    const eu_option& option, 
-    PricingFn&& pricing_fn
-) {
-    const double h = eval_finite_step(option.volatility);
-    eu_option option_up = option;
-    option_up.volatility += h;
-
-    eu_option option_dn = option;
-    option_dn.volatility -= h;
-
-    return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
-}
-
-template<typename PricingFn>
-double eval_theta(
-    const eu_option& option, 
-    PricingFn&& pricing_fn
-) {
-    const double h = eval_finite_step(option.expiry);
-    eu_option option_up = option;
-    option_up.expiry += h;
-
-    eu_option option_dn = option;
-    option_dn.expiry -= h;
-
-    return -eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
-}
-
-template<typename PricingFn>
-double eval_rho(
-    const eu_option& option, 
-    PricingFn&& pricing_fn
-) {
-    const double h = eval_finite_step(option.rate);
-    eu_option option_up = option;
-    option_up.rate += h;
-
-    eu_option option_dn = option;
-    option_dn.rate -= h;
-
-    return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
 }
 
 int main(int argsc, const char* argsv[]) {
@@ -164,11 +71,11 @@ int main(int argsc, const char* argsv[]) {
         
         auto mc_dt = ms_t(end - start).count();
 
-        double delta = eval_delta(option, mc_pricing);
-        double gamma = eval_gamma(option, mc_pricing);
-        double vega = eval_vega(option, mc_pricing);
-        double theta = eval_theta(option, mc_pricing);
-        double rho = eval_rho(option, mc_pricing);
+        double delta = greeks::delta(option, mc_pricing);
+        double gamma = greeks::gamma(option, mc_pricing);
+        double vega = greeks::vega(option, mc_pricing);
+        double theta = greeks::theta(option, mc_pricing);
+        double rho = greeks::rho(option, mc_pricing);
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
