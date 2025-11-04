@@ -1,6 +1,5 @@
 #include "monte_carlo.h"
 
-#include <random>
 #include <algorithm>
 #include <cmath>
 #include <thread>
@@ -8,16 +7,14 @@
 
 #define TEST_ALIGNED
 
-double grow(const eu_option& option) {
-    thread_local std::random_device rd;
-    thread_local std::mt19937 gen(rd());
+
+double grow(const eu_option& option, std::mt19937& gen) {
     thread_local std::normal_distribution<> dist(0.0, 1.0);
 
-    double Z = dist(gen);
-
-    double a = option.rate - 0.5 * option.volatility * option.volatility;
-    double b = option.volatility * std::sqrt(option.expiry) * Z;
-    double c = std::exp(a * option.expiry + b);
+    const double Z = dist(gen);
+    const double a = option.rate - 0.5 * option.volatility * option.volatility;
+    const double b = option.volatility * std::sqrt(option.expiry) * Z;
+    const double c = std::exp(a * option.expiry + b);
      
     return option.spot * c;
 }
@@ -26,8 +23,8 @@ inline double discount(double future_price, double rate, double time_to_expiry) 
     return future_price * exp(-rate * time_to_expiry);
 }
 
-double payoff(const eu_option& option) {
-    double future_price = grow(option);
+double payoff(const eu_option& option, std::mt19937& gen) {
+    double future_price = grow(option, gen);
     double raw_payoff = option.type == OptionType::Call 
         ? std::max(future_price - option.strike, 0.0)
         : std::max(option.strike - future_price, 0.0);
@@ -35,15 +32,22 @@ double payoff(const eu_option& option) {
     return discounted_payoff;
 }
 
+inline unsigned int thread_seed(unsigned int seed, unsigned int thread_id) {
+    return seed + 31 * thread_id;
+}
+
 void monte_carlo_pricing_batch(
     const eu_option& option, 
     size_t batch_size,
-    double* payoff_mem
+    double* payoff_mem,
+    unsigned int seed,
+    unsigned int thread_id
 ) {
+    std::mt19937 gen(thread_seed(seed, thread_id));
     double batch_fraction = 1.0 / batch_size;
     double avg_payoff = 0.0;
     for (size_t i = 0; i < batch_size; ++i) {
-        avg_payoff += payoff(option) * batch_fraction;
+        avg_payoff += payoff(option, gen) * batch_fraction;
     }
     *payoff_mem = avg_payoff;
 }
@@ -54,7 +58,11 @@ struct alignas(64) aligned_double {
 };
 #endif
 
-double monte_carlo_pricing(const eu_option& option, const monte_carlo_parameters& params) {
+double monte_carlo_pricing(
+    const eu_option& option, 
+    const monte_carlo_parameters& params,
+    const unsigned int seed
+) {
 #ifdef TEST_ALIGNED
     std::vector<aligned_double> avg_payoffs(params.thread_count); 
 #else
@@ -70,10 +78,12 @@ double monte_carlo_pricing(const eu_option& option, const monte_carlo_parameters
             std::ref(option), 
             params.sample_count / params.thread_count,
 #ifdef TEST_ALIGNED
-            &(avg_payoffs[i].x)
+            &(avg_payoffs[i].x),
 #else
-            &avg_payoffs[i]
+            &avg_payoffs[i],
 #endif
+            seed,
+            i
         );
     }
 

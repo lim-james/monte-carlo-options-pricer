@@ -138,10 +138,6 @@ int main(int argsc, const char* argsv[]) {
     const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : std::thread::hardware_concurrency();
     const monte_carlo_parameters params{sample_count, thread_count};
 
-    const auto mc_pricing = [&params](const eu_option& op) {
-        return monte_carlo_pricing(op, params); 
-    };
-
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
@@ -153,7 +149,13 @@ int main(int argsc, const char* argsv[]) {
     bs_times.reserve(num_options);
     diffs.reserve(num_options);
 
+    std::random_device rd;
     for (const eu_option& option: eu_options_list) {
+        const unsigned int seed = rd();
+        const auto mc_pricing = [&params, seed](const eu_option& op) {
+            return monte_carlo_pricing(op, params, seed); 
+        };
+
         auto start = hr_clock_t::now();
         const double mc_payoff = mc_pricing(option);
         auto end = hr_clock_t::now();
