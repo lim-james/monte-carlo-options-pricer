@@ -72,14 +72,7 @@ int main(int argsc, const char* argsv[]) {
         auto start = hr_clock_t::now();
         const double mc_payoff = mc_pricing(option);
         auto end = hr_clock_t::now();
-        
         auto mc_dt = ms_t(end - start).count();
-
-        double delta = greeks::delta(option, mc_pricing);
-        double gamma = greeks::gamma(option, mc_pricing);
-        double vega  = greeks::vega(option, mc_pricing);
-        double theta = greeks::theta(option, mc_pricing);
-        double rho   = greeks::rho(option, mc_pricing);
 
         start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
@@ -89,13 +82,7 @@ int main(int argsc, const char* argsv[]) {
 
         payoffs.push_back(mc_payoff);
 
-        greeks.emplace_back(
-            delta,
-            gamma,
-            vega,
-            rho,
-            theta
-        );
+        greeks.push_back(greeks::calculate(option, mc_pricing));
 
         mc_times.push_back(mc_dt);
         bs_times.push_back(bs_dt);
