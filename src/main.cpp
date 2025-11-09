@@ -8,7 +8,7 @@
 #include <numeric>
 
 #include "greeks.hpp"
-#include "eu_option_out.h"
+#include "option_greeks.h"
 
 #include "rapidcsv.h"
 #include "monte_carlo.h"
@@ -51,8 +51,11 @@ int main(int argsc, const char* argsv[]) {
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
-    std::vector<eu_option_out> priced_options;
-    priced_options.reserve(num_options);
+    std::vector<double> payoffs;
+    payoffs.reserve(num_options);
+
+    std::vector<option_greeks> greeks;
+    greeks.reserve(num_options);
 
     std::vector<double> mc_times, bs_times, diffs;
     mc_times.reserve(num_options);
@@ -84,28 +87,22 @@ int main(int argsc, const char* argsv[]) {
 
         auto bs_dt = ms_t(end - start).count();
 
-        // std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
+        payoffs.push_back(mc_payoff);
 
-        priced_options.emplace_back(eu_option_out{
-            option.type,
-            option.spot,
-            option.strike,
-            option.expiry,
-            option.volatility,
-            option.rate,
-            mc_payoff,
+        greeks.emplace_back(
             delta,
             gamma,
             vega,
             rho,
             theta
-        });
-        mc_times.emplace_back(mc_dt);
-        bs_times.emplace_back(bs_dt);
-        diffs.emplace_back(mc_payoff - bs_payoff);
+        );
+
+        mc_times.push_back(mc_dt);
+        bs_times.push_back(bs_dt);
+        diffs.push_back(mc_payoff - bs_payoff);
     }
 
-    save_options_to_csv("./output.csv", priced_options);
+    save_options_to_csv("./output.csv", eu_options_list, payoffs, greeks);
 
     perf_stats st;
     st.mc_ms_total     = std::accumulate(mc_times.begin(), mc_times.end(), 0.0);

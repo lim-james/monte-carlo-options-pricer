@@ -2,6 +2,8 @@
 
 #include "rapidcsv.h"
 
+#include <format>
+
 enum OptionCSVColumn {
     COL_TYPE,
     COL_SPOT,
@@ -40,7 +42,9 @@ std::vector<eu_option> load_options_from_csv(const char* filepath) {
 
 void save_options_to_csv(
     const char* filepath, 
-    const std::vector<eu_option_out>& options
+    const std::vector<eu_option>& options,
+    const std::vector<double>& payoffs,
+    const std::vector<option_greeks>& greeks
 ) {
     static const std::vector<std::string> header = {
         "type", 
@@ -52,20 +56,38 @@ void save_options_to_csv(
     rapidcsv::Document csv;
     csv.SetRow(-1, header);
 
+    std::string missing_payoff_assertion = std::format(
+        "Missing payoffs :: options[{}] != payoffs[{}]",
+        options.size(),
+        payoffs.size()
+    );
+    assert(options.size() == payoffs.size() && missing_payoff_assertion.c_str());
+
+    std::string missiing_greek_assertion = std::format(
+        "Missing greeks :: options[{}] != greeks[{}]",
+        options.size(),
+        greeks.size()
+    );
+    assert(options.size() == greeks.size() && missing_payoff_assertion.c_str());
+
     for (size_t i = 0; i < options.size(); ++i) {
-        const eu_option_out& op = options[i];
-        csv.SetCell(OptionCSVColumn::COL_TYPE, i, static_cast<int>(op.type));
-        csv.SetCell(OptionCSVColumn::COL_SPOT, i, op.spot);
-        csv.SetCell(OptionCSVColumn::COL_STRIKE, i, op.strike);
-        csv.SetCell(OptionCSVColumn::COL_EXPIRY, i, op.expiry);
+        const eu_option& op = options[i];
+        const option_greeks& g = greeks[i];
+
+        csv.SetCell(OptionCSVColumn::COL_TYPE,       i, static_cast<int>(op.type));
+        csv.SetCell(OptionCSVColumn::COL_SPOT,       i, op.spot);
+        csv.SetCell(OptionCSVColumn::COL_STRIKE,     i, op.strike);
+        csv.SetCell(OptionCSVColumn::COL_EXPIRY,     i, op.expiry);
         csv.SetCell(OptionCSVColumn::COL_VOLATILITY, i, op.volatility);
-        csv.SetCell(OptionCSVColumn::COL_RATE, i, op.rate);
-        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, op.payoff);
-        csv.SetCell(OptionCSVColumn::COL_DELTA, i, op.delta);
-        csv.SetCell(OptionCSVColumn::COL_GAMMA, i, op.gamma);
-        csv.SetCell(OptionCSVColumn::COL_VEGA, i, op.vega);
-        csv.SetCell(OptionCSVColumn::COL_THETA, i, op.theta);
-        csv.SetCell(OptionCSVColumn::COL_RHO, i, op.rho);
+        csv.SetCell(OptionCSVColumn::COL_RATE,       i, op.rate);
+
+        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, payoffs[i]);
+
+        csv.SetCell(OptionCSVColumn::COL_DELTA, i, g.delta);
+        csv.SetCell(OptionCSVColumn::COL_GAMMA, i, g.gamma);
+        csv.SetCell(OptionCSVColumn::COL_VEGA,  i, g.vega);
+        csv.SetCell(OptionCSVColumn::COL_THETA, i, g.theta);
+        csv.SetCell(OptionCSVColumn::COL_RHO,   i, g.rho);
     }
 
     csv.Save(filepath);
