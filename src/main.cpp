@@ -51,8 +51,11 @@ int main(int argsc, const char* argsv[]) {
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
-    std::vector<double> payoffs;
-    payoffs.reserve(num_options);
+    std::vector<double> mc_payoffs;
+    mc_payoffs.reserve(num_options);
+
+    std::vector<double> bs_payoffs;
+    bs_payoffs.reserve(num_options);
 
     std::vector<option_greeks> greeks;
     greeks.reserve(num_options);
@@ -74,22 +77,32 @@ int main(int argsc, const char* argsv[]) {
         auto end = hr_clock_t::now();
         auto mc_dt = ms_t(end - start).count();
 
-        start = hr_clock_t::now();
-        const double bs_payoff = black_scholes_pricing(option);
-        end = hr_clock_t::now();
-
-        auto bs_dt = ms_t(end - start).count();
-
-        payoffs.push_back(mc_payoff);
-
         greeks.push_back(greeks::calculate(option, mc_pricing));
 
         mc_times.push_back(mc_dt);
-        bs_times.push_back(bs_dt);
-        diffs.push_back(mc_payoff - bs_payoff);
+        mc_payoffs.push_back(mc_payoff);
     }
 
-    save_options_to_csv("./output.csv", eu_options_list, payoffs, greeks);
+    for (const eu_option& option: eu_options_list) {
+        auto start = hr_clock_t::now();
+        const double bs_payoff = black_scholes_pricing(option);
+        auto end = hr_clock_t::now();
+
+        auto bs_dt = ms_t(end - start).count();
+        bs_times.push_back(bs_dt);
+        bs_payoffs.push_back(bs_payoff);
+    }
+
+    assert(
+        mc_payoffs.size() == bs_payoffs.size() &&
+       "Mismatch in Monte Carlo and Black-Scholes payoff counts"
+    );
+
+    for (size_t i = 0; i < mc_payoffs.size(); ++i) {
+        diffs.push_back(mc_payoffs[i] - bs_payoffs[i]);
+    }
+
+    save_options_to_csv("./output.csv", eu_options_list, mc_payoffs, greeks);
 
     perf_stats st;
     st.mc_ms_total     = std::accumulate(mc_times.begin(), mc_times.end(), 0.0);
