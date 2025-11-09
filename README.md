@@ -165,10 +165,10 @@ european call-put option simulation.
 I have documented the vision for this project and the different areas of
 technicalities I would be exploring along the way.
 
-- [v0.6.0] Variance Reduction 
-- [v0.7.0] Performance + Instrumentation
-  - Optimising and playing with different performance tools
-- [v0.8.0] Modularity
+- [v0.6.0] Modularity
   - Make it ready to be shipped as a package
+- [v0.7.0] Variance Reduction 
+- [v0.8.0] Performance + Instrumentation
+  - Optimising and playing with different performance tools
 
 
