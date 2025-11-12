@@ -5,6 +5,15 @@
 
 ## Version Notes
 
+
+### v0.6.0 
+
+- Modularity
+  - Make it ready to be shipped as a package
+- Modernise adopt modern C++ concepts wherever possible
+  - starting with ranges (c++20)
+
+
 ### v0.5.0
 
 - Explore Greeks
@@ -165,8 +174,6 @@ european call-put option simulation.
 I have documented the vision for this project and the different areas of
 technicalities I would be exploring along the way.
 
-- [v0.6.0] Modularity
-  - Make it ready to be shipped as a package
 - [v0.7.0] Variance Reduction 
 - [v0.8.0] Performance + Instrumentation
   - Optimising and playing with different performance tools
