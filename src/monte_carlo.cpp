@@ -4,6 +4,7 @@
 #include <cmath>
 #include <thread>
 #include <functional>
+#include <ranges>
 
 #define TEST_ALIGNED
 
@@ -44,12 +45,13 @@ void monte_carlo_pricing_batch(
     unsigned int thread_id
 ) {
     std::mt19937 gen(thread_seed(seed, thread_id));
-    double batch_fraction = 1.0 / batch_size;
-    double avg_payoff = 0.0;
-    for (size_t i = 0; i < batch_size; ++i) {
-        avg_payoff += payoff(option, gen) * batch_fraction;
-    }
-    *payoff_mem = avg_payoff;
+
+    auto payoff_branch = [&option, &gen](auto) { return payoff(option, gen); };
+    auto payoffs = std::views::repeat(0U, batch_size) 
+                 | std::views::transform(payoff_branch);
+    double total_payoff = std::ranges::fold_left(payoffs, 0, std::plus{});
+
+    *payoff_mem = total_payoff / (double)batch_size;
 }
 
 #ifdef TEST_ALIGNED
