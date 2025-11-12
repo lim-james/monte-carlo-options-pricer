@@ -12,6 +12,7 @@
   - Make it ready to be shipped as a package
 - Modernise adopt modern C++ concepts wherever possible
   - starting with ranges (c++20)
+  - use jthreads (c++20)
 
 
 ### v0.5.0
