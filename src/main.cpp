@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include <numeric>
+#include <ranges>
 
 #include "greeks.hpp"
 #include "option_greeks.h"
@@ -95,10 +96,9 @@ int main(int argsc, const char* argsv[]) {
     );
 
     std::vector<double> diffs;
-    diffs.reserve(num_options);
-    for (size_t i = 0; i < mc_payoffs.size(); ++i) {
-        diffs.push_back(mc_payoffs[i] - bs_payoffs[i]);
-    }
+    diffs.reserve(mc_payoffs.size());
+    for (const auto& [mc, bs] : std::views::zip(mc_payoffs, bs_payoffs)) 
+        diffs.push_back(mc - bs);
 
     save_options_to_csv("./output.csv", eu_options_list, mc_payoffs, greeks);
 
