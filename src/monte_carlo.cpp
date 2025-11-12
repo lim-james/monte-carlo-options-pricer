@@ -71,27 +71,27 @@ double monte_carlo_pricing(
     std::vector<double> avg_payoffs(params.thread_count); 
 #endif
 
-    std::vector<std::thread> threads; 
-    threads.reserve(params.thread_count);
-
-    for (unsigned int i = 0; i < params.thread_count; ++i) {
-        threads.emplace_back(
-            monte_carlo_pricing_batch, 
-            std::ref(option), 
-            params.sample_count / params.thread_count,
+    {
+        auto thread_dispatch = [&](unsigned int i) {
+            return std::jthread(
+                monte_carlo_pricing_batch, 
+                std::ref(option), 
+                params.sample_count / params.thread_count,
 #ifdef TEST_ALIGNED
-            &(avg_payoffs[i].x),
+                &(avg_payoffs[i].x),
 #else
-            &avg_payoffs[i],
+                &avg_payoffs[i],
 #endif
-            seed,
-            i
+                seed,
+                i
+            );
+        };
+        std::ranges::for_each(
+            std::views::iota(0u, params.thread_count), 
+            thread_dispatch
         );
     }
 
-    for (auto it = threads.rbegin(); it != threads.rend(); ++it) {
-        it->join();
-    }
 
     double sample_fraction = 1.0 / params.thread_count;
     double avg_payoff = 0.0;
