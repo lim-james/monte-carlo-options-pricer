@@ -51,19 +51,12 @@ int main(int argsc, const char* argsv[]) {
     const size_t num_options = eu_options_list.size();
     double total_time = 0.0;
     
-    std::vector<double> mc_payoffs;
+    std::vector<double> mc_payoffs, mc_times;
     mc_payoffs.reserve(num_options);
-
-    std::vector<double> bs_payoffs;
-    bs_payoffs.reserve(num_options);
+    mc_times.reserve(num_options);
 
     std::vector<option_greeks> greeks;
     greeks.reserve(num_options);
-
-    std::vector<double> mc_times, bs_times, diffs;
-    mc_times.reserve(num_options);
-    bs_times.reserve(num_options);
-    diffs.reserve(num_options);
 
     std::random_device rd;
     for (const eu_option& option: eu_options_list) {
@@ -83,6 +76,9 @@ int main(int argsc, const char* argsv[]) {
         mc_payoffs.push_back(mc_payoff);
     }
 
+    std::vector<double> bs_payoffs, bs_times;
+    bs_payoffs.reserve(num_options);
+    bs_times.reserve(num_options);
     for (const eu_option& option: eu_options_list) {
         auto start = hr_clock_t::now();
         const double bs_payoff = black_scholes_pricing(option);
@@ -98,6 +94,8 @@ int main(int argsc, const char* argsv[]) {
        "Mismatch in Monte Carlo and Black-Scholes payoff counts"
     );
 
+    std::vector<double> diffs;
+    diffs.reserve(num_options);
     for (size_t i = 0; i < mc_payoffs.size(); ++i) {
         diffs.push_back(mc_payoffs[i] - bs_payoffs[i]);
     }
