@@ -6,8 +6,6 @@
 #include <functional>
 #include <ranges>
 
-#define TEST_ALIGNED
-
 
 double grow(const eu_option& option, std::mt19937& gen) {
     thread_local std::normal_distribution<> dist(0.0, 1.0);
@@ -72,8 +70,11 @@ double monte_carlo_pricing(
 #endif
 
     {
-        auto thread_dispatch = [&](unsigned int i) {
-            return std::jthread(
+        std::vector<std::jthread> threads;
+        threads.reserve(params.thread_count);
+
+        for (auto i : std::views::iota(0u, params.thread_count))
+            threads.emplace_back(
                 monte_carlo_pricing_batch, 
                 std::ref(option), 
                 params.sample_count / params.thread_count,
@@ -85,23 +86,16 @@ double monte_carlo_pricing(
                 seed,
                 i
             );
-        };
-        std::ranges::for_each(
-            std::views::iota(0u, params.thread_count), 
-            thread_dispatch
-        );
     }
 
-
-    double sample_fraction = 1.0 / params.thread_count;
-    double avg_payoff = 0.0;
-    for (unsigned int i = 0; i < params.thread_count; ++i) {
 #ifdef TEST_ALIGNED
-        avg_payoff += avg_payoffs[i].x * sample_fraction;
-#else
-        avg_payoff += avg_payoffs[i] * sample_fraction;
-#endif
+    double total_payoff = 0.0;
+    for (unsigned int i = 0; i < params.thread_count; ++i) {
+        total_payoff += avg_payoffs[i].x;
     }
+#else
+    double total_payoff = std::accumulate(avg_payoffs.begin(), avg_payoffs.end(), 0.0);
+#endif
 
-    return avg_payoff;
+    return total_payoff / (double)params.thread_count;
 }
