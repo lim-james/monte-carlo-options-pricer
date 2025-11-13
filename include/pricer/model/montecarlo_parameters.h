@@ -1,5 +1,4 @@
-#ifndef PRICER_MODEL_MONTECARLO_PARAMETERS_H
-#define PRICER_MODEL_MONTECARLO_PARAMETERS_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -12,5 +11,3 @@ struct MontecarloParameters {
 };
 
 }
-
-#endif

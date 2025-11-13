@@ -1,5 +1,4 @@
-#ifndef PRICER_UTIL_IO_H
-#define PRICER_UTIL_IO_H
+#pragma once
 
 #include <vector>
 
@@ -21,6 +20,4 @@ void saveOptionsToCsv(
 
 }
 }
-
-#endif
 

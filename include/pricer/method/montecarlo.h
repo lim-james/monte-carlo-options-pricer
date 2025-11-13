@@ -1,5 +1,4 @@
-#ifndef PRICER_METHOD_MONTECARLO_H
-#define PRICER_METHOD_MONTECARLO_H
+#pragma once
 
 #include "pricer/model/european.h"
 #include "pricer/model/montecarlo_parameters.h"
@@ -16,4 +15,3 @@ double priceOption(
 }
 }
 
-#endif

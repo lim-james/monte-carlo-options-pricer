@@ -1,5 +1,4 @@
-#ifndef OPTION_GREEKS_H
-#define OPTION_GREEKS_H
+#pragma once
 
 namespace pricer::model {
 
@@ -12,5 +11,3 @@ struct OptionGreeks {
 };
 
 }
-
-#endif

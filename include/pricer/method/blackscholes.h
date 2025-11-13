@@ -1,5 +1,4 @@
-#ifndef BLACKSCHOLES_METHOD 
-#define BLACKSCHOLES_METHOD 
+#pragma once
 
 #include "pricer/model/european.h"
 
@@ -11,4 +10,3 @@ double priceOption(const model::EuropeanOption& option);
 }
 }
 
-#endif

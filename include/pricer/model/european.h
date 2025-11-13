@@ -1,5 +1,4 @@
-#ifndef EUROPEAN_OPTION_H
-#define EUROPEAN_OPTION_H
+#pragma once
 
 #include "option_type.h"
 
@@ -15,5 +14,3 @@ struct EuropeanOption {
 };
 
 }
-
-#endif
