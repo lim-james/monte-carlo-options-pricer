@@ -1,12 +1,16 @@
 #ifndef OPTION_GREEKS_H
 #define OPTION_GREEKS_H
 
-struct option_greeks {
+namespace pricer::model {
+
+struct OptionGreeks {
     double delta;
     double gamma;
     double vega;
     double rho;
     double theta;
 };
+
+}
 
 #endif

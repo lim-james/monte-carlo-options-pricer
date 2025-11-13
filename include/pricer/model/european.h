@@ -1,9 +1,11 @@
-#ifndef EU_OPTION_H
-#define EU_OPTION_H
+#ifndef EUROPEAN_OPTION_H
+#define EUROPEAN_OPTION_H
 
 #include "option_type.h"
 
-struct eu_option {
+namespace pricer::model {
+
+struct EuropeanOption {
     OptionType type;
     double spot;  
     double strike;  
@@ -11,5 +13,7 @@ struct eu_option {
     double volatility;  
     double rate;  
 };
+
+}
 
 #endif

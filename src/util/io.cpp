@@ -1,8 +1,13 @@
-#include "io.h"
-
-#include "rapidcsv.h"
+#include "pricer/util/io.h"
 
 #include <format>
+#include <string>
+
+#include "pricer/util/rapidcsv.h"
+#include "pricer/model/option_type.h"
+
+namespace pricer {
+namespace util {
 
 enum OptionCSVColumn {
     COL_TYPE,
@@ -20,15 +25,15 @@ enum OptionCSVColumn {
 };
 
 [[nodiscard("Loaded options unused")]] 
-std::vector<eu_option> load_options_from_csv(const char* filepath) {
+std::vector<model::EuropeanOption> loadOptionsFromCsv(const char* filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 
     const size_t no_rows = csv.GetRowCount();
-    std::vector<eu_option> options_list{no_rows};
+    std::vector<model::EuropeanOption> options_list{no_rows};
 
     for (size_t i = 0; i < no_rows; ++i) {
-        options_list[i] = eu_option{
-            static_cast<OptionType>(csv.GetCell<int>(OptionCSVColumn::COL_TYPE, i)),
+        options_list[i] = model::EuropeanOption{
+            static_cast<model::OptionType>(csv.GetCell<int>(OptionCSVColumn::COL_TYPE, i)),
             csv.GetCell<double>(OptionCSVColumn::COL_SPOT, i),
             csv.GetCell<double>(OptionCSVColumn::COL_STRIKE, i),
             csv.GetCell<double>(OptionCSVColumn::COL_EXPIRY, i),
@@ -40,11 +45,11 @@ std::vector<eu_option> load_options_from_csv(const char* filepath) {
     return options_list;
 }
 
-void save_options_to_csv(
+void saveOptionsToCsv(
     const char* filepath, 
-    const std::vector<eu_option>& options,
+    const std::vector<model::EuropeanOption>& options,
     const std::vector<double>& payoffs,
-    const std::vector<option_greeks>& greeks
+    const std::vector<model::OptionGreeks>& greeks
 ) {
     static const std::vector<std::string> header = {
         "type", 
@@ -71,8 +76,8 @@ void save_options_to_csv(
     assert(options.size() == greeks.size() && missing_payoff_assertion.c_str());
 
     for (size_t i = 0; i < options.size(); ++i) {
-        const eu_option& op = options[i];
-        const option_greeks& g = greeks[i];
+        const model::EuropeanOption& op = options[i];
+        const model::OptionGreeks& g = greeks[i];
 
         csv.SetCell(OptionCSVColumn::COL_TYPE,       i, static_cast<int>(op.type));
         csv.SetCell(OptionCSVColumn::COL_SPOT,       i, op.spot);
@@ -91,4 +96,7 @@ void save_options_to_csv(
     }
 
     csv.Save(filepath);
+}
+
+}
 }

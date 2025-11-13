@@ -1,13 +1,15 @@
-#include "monte_carlo.h"
+#include "pricer/method/montecarlo.h"
 
 #include <algorithm>
 #include <cmath>
 #include <thread>
-#include <functional>
 #include <ranges>
+#include <random>
 
+namespace pricer {
+namespace method::montecarlo {
 
-double grow(const eu_option& option, std::mt19937& gen) {
+double grow(const model::EuropeanOption& option, std::mt19937& gen) {
     thread_local std::normal_distribution<> dist(0.0, 1.0);
 
     const double Z = dist(gen);
@@ -22,9 +24,9 @@ inline double discount(double future_price, double rate, double time_to_expiry) 
     return future_price * exp(-rate * time_to_expiry);
 }
 
-double payoff(const eu_option& option, std::mt19937& gen) {
+double payoff(const model::EuropeanOption& option, std::mt19937& gen) {
     double future_price = grow(option, gen);
-    double raw_payoff = option.type == OptionType::Call 
+    double raw_payoff = option.type == model::OptionType::Call 
         ? std::max(future_price - option.strike, 0.0)
         : std::max(option.strike - future_price, 0.0);
     double discounted_payoff = discount(raw_payoff, option.rate, option.expiry);
@@ -36,7 +38,7 @@ inline unsigned int thread_seed(unsigned int seed, unsigned int thread_id) {
 }
 
 void monte_carlo_pricing_batch(
-    const eu_option& option, 
+    const model::EuropeanOption& option, 
     size_t batch_size,
     double* payoff_mem,
     unsigned int seed,
@@ -58,10 +60,10 @@ struct alignas(64) aligned_double {
 };
 #endif
 
-double monte_carlo_pricing(
-    const eu_option& option, 
-    const monte_carlo_parameters& params,
-    const unsigned int seed
+double priceOption(
+    const model::EuropeanOption& option, 
+    const model::MontecarloParameters& params,
+    const unsigned int simulation_seed
 ) {
 #ifdef TEST_ALIGNED
     std::vector<aligned_double> avg_payoffs(params.thread_count); 
@@ -83,7 +85,7 @@ double monte_carlo_pricing(
 #else
                 &avg_payoffs[i],
 #endif
-                seed,
+                simulation_seed,
                 i
             );
     }
@@ -98,4 +100,43 @@ double monte_carlo_pricing(
 #endif
 
     return total_payoff / (double)params.thread_count;
+}
+
+// response_type priceOption(
+//     const std::vector<model::EuropeanOption>& options, 
+//     const monte_carlo_parameters& params
+// ) {
+//     size_t num_options = options.size();
+// 
+//     simulation_response response;
+//     response.payoffs.reserve(num_options);
+//     response.greeks.reserve(num_options);
+// 
+//     std::vector<double> times;
+//     times.reserve(num_options);
+// 
+//     std::random_device rd;
+//     for (const model::EuropeanOption& option: options) {
+//         unsigned int seed = rd();
+//         auto pricing = [&params, seed](const model::EuropeanOption& op) {
+//             return simulate(op, params, seed); 
+//         };
+// 
+//         auto start = hr_clock_t::now();
+//         const double payoff = pricing(option);
+//         auto end = hr_clock_t::now();
+// 
+//         auto dt = ms_t(end - start).count();
+//         times.push_back(dt);
+// 
+//         response.payoffs.push_back(payoff);
+//         response.greeks.push_back(greeks::calculate(option, pricing));
+//     }
+// 
+//     perf_stats st = calc_perf_stats(times);
+// 
+//     return {response, st};
+// }
+
+}
 }
