@@ -1,1 +1,1 @@
-g++ -std=c++23 -Iinclude src/*.cpp -o simulate
+g++ -std=c++23 -Iinclude $(find src -name '*.cpp') -o simulate
