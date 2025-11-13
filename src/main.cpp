@@ -23,12 +23,13 @@ int main(int argsc, const char* argsv[]) {
     uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
     pricer::model::MontecarloParameters params{sample_count, thread_count};
 
-    pricer::method::blackscholes::priceOption(eu_options_list[0]);
-
     std::random_device rd;
     unsigned int seed = rd();
-    pricer::method::montecarlo::priceOption(eu_options_list[0], params, seed);
+    pricer::method::montecarlo::MonteCarloPricer mc{seed, params};
+    mc.price(eu_options_list[0]);
 
+    pricer::method::blackscholes::BlackScholesPricer bs;
+    bs.price(eu_options_list[0]);
 
     // auto [bs, bs_st] = pricer::method::blackscholes::priceOption(eu_options_list);
 

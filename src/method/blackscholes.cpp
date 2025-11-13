@@ -9,7 +9,7 @@ inline double cdf(double x) {
     return 0.5 * std::erfc(-x / std::sqrt(2));
 }
 
-double priceOption(const model::EuropeanOption& option) {
+double BlackScholesPricer::price(const model::EuropeanOption& option) const {
     const double d1_num_ln = std::log(option.spot / option.strike);
     const double d1_num_rate = option.rate + 0.5 * option.volatility * option.volatility;
     const double d1_num = d1_num_ln + d1_num_rate * option.expiry;

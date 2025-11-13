@@ -60,32 +60,35 @@ struct alignas(64) aligned_double {
 };
 #endif
 
-double priceOption(
-    const model::EuropeanOption& option, 
-    const model::MontecarloParameters& params,
-    const unsigned int simulation_seed
-) {
+MonteCarloPricer::MonteCarloPricer(
+    const unsigned int simulation_seed,
+    const model::MontecarloParameters& params
+) : simulation_seed_(simulation_seed), simulation_parameters_(params) {}
+
+double MonteCarloPricer::price(
+    const model::EuropeanOption& option
+) const {
 #ifdef TEST_ALIGNED
     std::vector<aligned_double> avg_payoffs(params.thread_count); 
 #else
-    std::vector<double> avg_payoffs(params.thread_count); 
+    std::vector<double> avg_payoffs(simulation_parameters_.thread_count); 
 #endif
 
     {
         std::vector<std::jthread> threads;
-        threads.reserve(params.thread_count);
+        threads.reserve(simulation_parameters_.thread_count);
 
-        for (auto i : std::views::iota(0u, params.thread_count))
+        for (auto i : std::views::iota(0u, simulation_parameters_.thread_count))
             threads.emplace_back(
                 monte_carlo_pricing_batch, 
                 std::ref(option), 
-                params.sample_count / params.thread_count,
+                simulation_parameters_.sample_count / simulation_parameters_.thread_count,
 #ifdef TEST_ALIGNED
                 &(avg_payoffs[i].x),
 #else
                 &avg_payoffs[i],
 #endif
-                simulation_seed,
+                simulation_seed_,
                 i
             );
     }
@@ -99,7 +102,7 @@ double priceOption(
     double total_payoff = std::accumulate(avg_payoffs.begin(), avg_payoffs.end(), 0.0);
 #endif
 
-    return total_payoff / (double)params.thread_count;
+    return total_payoff / (double)simulation_parameters_.thread_count;
 }
 
 // response_type priceOption(
