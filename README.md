@@ -1,5 +1,14 @@
 # Monte Carlo Options Pricer [v0.5.0]
 
+## Quickstart
+
+> version `C++23`
+
+```sh
+cmake -B build
+cmake --build build
+```
+
 > Studying quantitative finance fundamentals (options, bonds, discount curves) 
 > through hands-on implementation of pricing models and risk calculations
 
@@ -13,6 +22,9 @@
 - Modernise adopt modern C++ concepts wherever possible
   - starting with ranges (c++20)
   - use jthreads (c++20)
+- Build with CMake
+  - also because my linter is getting annoying so I need to provide it something
+  - 
 
 
 ### v0.5.0
