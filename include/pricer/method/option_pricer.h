@@ -1,14 +1,14 @@
 #pragma once
 
 #include "pricer/model/european.h"
+#include <concepts>
 
 namespace pricer {
 namespace method {
 
-class OptionPricer {
-public:
-    virtual ~OptionPricer() = default;
-    virtual double price(const model::EuropeanOption& option) const = 0;
+template<typename P>
+concept OptionPricer = requires(const P& p, const model::EuropeanOption& option) {
+    { p.price(option) } -> std::convertible_to<double>;
 };
 
 }

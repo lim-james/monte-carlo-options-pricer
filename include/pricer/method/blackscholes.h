@@ -6,9 +6,9 @@
 namespace pricer {
 namespace method::blackscholes {
 
-class BlackScholesPricer : public OptionPricer {
+class BlackScholesPricer {
 public:
-    double price(const model::EuropeanOption& option) const override;
+    double price(const model::EuropeanOption& option) const;
 };
 
 }
