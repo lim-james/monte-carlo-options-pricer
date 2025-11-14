@@ -1,3 +1,3 @@
-g++ -std=c++23 -Iinclude $(find src -name '*.cpp') -o simulate
-chmod +x simulate
-./simulate $1 $2 $3
+cmake -B build
+cmake --build build
+./build/MonteCarloOptionsPricer $1 $2 $3
