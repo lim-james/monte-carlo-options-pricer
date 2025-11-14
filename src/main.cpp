@@ -1,14 +1,13 @@
 #include <print>
 #include <random>
 #include <thread>
+#include <cassert>
 
 #include "pricer/model/montecarlo_parameters.h"
 #include "pricer/method/blackscholes.h"
 #include "pricer/method/montecarlo.h"
+#include "pricer/method/portfolio_pricer.h"
 #include "pricer/util/io.h"
-
-using hr_clock_t = std::chrono::high_resolution_clock;
-using ms_t = std::chrono::duration<double, std::milli>;
 
 int main(int argsc, const char* argsv[]) {
     if (argsc <= 1) {
@@ -26,38 +25,46 @@ int main(int argsc, const char* argsv[]) {
     std::random_device rd;
     unsigned int seed = rd();
     pricer::method::montecarlo::MonteCarloPricer mc{seed, params};
-    mc.price(eu_options_list[0]);
 
     pricer::method::blackscholes::BlackScholesPricer bs;
-    bs.price(eu_options_list[0]);
 
-    // auto [bs, bs_st] = pricer::method::blackscholes::priceOption(eu_options_list);
+#ifdef BENCHMARK_OPTIONS
+    auto [mc_payoffs, mc_st] = pricer::method::portfolio::price(eu_options_list, mc); 
+    auto [bs_payoffs, bs_st] = pricer::method::portfolio::price(eu_options_list, bs); 
+#else 
+    auto mc_payoffs = pricer::method::portfolio::price(eu_options_list, mc); 
+    auto bs_payoffs = pricer::method::portfolio::price(eu_options_list, bs); 
+#endif
 
-    // assert(
-    //     mc.payoffs.size() == bs.payoffs.size() &&
-    //    "Mismatch in Monte Carlo and Black-Scholes payoff counts"
-    // );
+    auto mc_greeks  = pricer::method::portfolio::calculateGreeks(eu_options_list, mc); 
 
-    // std::vector<double> diffs;
-    // diffs.reserve(mc.payoffs.size());
+    assert(
+        mc_payoffs.size() == bs_payoffs.size() &&
+       "Mismatch in Monte Carlo and Black-Scholes payoff counts"
+    );
 
-    // for (const auto& [mc_payoff, bs_payoff] : std::views::zip(mc.payoffs, bs.payoffs)) 
-    //     diffs.push_back(mc_payoff - bs_payoff);
+    pricer::util::saveOptionsToCsv("./output.csv", eu_options_list, mc_payoffs, mc_greeks);
 
-    // pricer::util::saveOptionsToCsv("./output.csv", eu_options_list, mc.payoffs, mc.greeks);
+    std::vector<double> diffs;
+    diffs.reserve(mc_payoffs.size());
 
-    //  double abs_diff_mean = std::fabs(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+    for (const auto& [mc_payoff, bs_payoff] : std::views::zip(mc_payoffs, bs_payoffs)) 
+        diffs.push_back(mc_payoff - bs_payoff);
 
-    // std::println("----- Performance Summary -----");
-    // std::println("Simulation Samples:  {}", params.sample_count);
-    // std::println("Requested threads:   {}", params.thread_count);
-    // std::println("Total options:       {}", eu_options_list.size());
-    // std::println("MC Throughput:       {:.03f} options/min", mc_st.options_per_min);
-    // std::println("BS Throughput:       {:.03f} options/min", bs_st.options_per_min);
-    // std::println("MC mean time:        {:.03f} ±{:.03f}ms", mc_st.mean_ms, mc_st.std_ms);
-    // std::println("BS mean time:        {:.03f} ±{:.03f}ms", bs_st.mean_ms, bs_st.std_ms);
-    // std::println("Mean |MC-BS|:        {:.03f}", abs_diff_mean);
-    // std::println("-------------------------------");
+    double abs_diff_mean = std::fabs(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+
+    std::println("----- Performance Summary -----");
+    std::println("Simulation Samples:  {}", params.sample_count);
+    std::println("Requested threads:   {}", params.thread_count);
+    std::println("Total options:       {}", eu_options_list.size());
+#ifdef BENCHMARK_OPTIONS
+    std::println("MC Throughput:       {:.03f} options/min", mc_st.options_per_min);
+    std::println("BS Throughput:       {:.03f} options/min", bs_st.options_per_min);
+    std::println("MC mean time:        {:.03f} ±{:.03f}ms", mc_st.mean_ms, mc_st.std_ms);
+    std::println("BS mean time:        {:.03f} ±{:.03f}ms", bs_st.mean_ms, bs_st.std_ms);
+#endif
+    std::println("Mean |MC-BS|:        {:.03f}", abs_diff_mean);
+    std::println("-------------------------------");
 
     return 0;
 }
