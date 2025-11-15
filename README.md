@@ -1,4 +1,4 @@
-# Monte Carlo Options Pricer [v0.5.0]
+# Monte Carlo Options Pricer [v0.6.0]
 
 ## Quickstart
 
@@ -13,6 +13,10 @@ cmake --build build
 > through hands-on implementation of pricing models and risk calculations
 
 ## Version Notes
+
+### v0.7.0 
+
+- Reflecting on my code structure and naming choices and improving on that.
 
 
 ### v0.6.0 
