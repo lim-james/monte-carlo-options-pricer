@@ -41,7 +41,7 @@ model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, size_t r
 }
 
 [[nodiscard("Loaded options unused")]] 
-std::vector<model::EuropeanOption> loadOptionsFromCsv(const char* filepath) {
+std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::path& filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 
     return std::views::iota(csv.GetRowCount()) 
@@ -49,8 +49,8 @@ std::vector<model::EuropeanOption> loadOptionsFromCsv(const char* filepath) {
         | std::ranges::to<std::vector>();
 }
 
-void saveOptionsToCsv(
-    const char* filepath, 
+void savePricedOptionsToCsv(
+    const std::filesystem::path& filepath, 
     const std::vector<model::EuropeanOption>& options,
     const std::vector<double>& payoffs,
     const std::vector<model::OptionGreeks>& greeks

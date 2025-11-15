@@ -43,7 +43,12 @@ int main(int argsc, const char* argsv[]) {
        "Mismatch in Monte Carlo and Black-Scholes payoff counts"
     );
 
-    pricer::util::saveOptionsToCsv("./output.csv", eu_options_list, mc_payoffs, mc_greeks);
+    pricer::util::savePricedOptionsToCsv(
+        "./output.csv", 
+        eu_options_list, 
+        mc_payoffs, 
+        mc_greeks
+    );
 
     std::vector<double> diffs;
     diffs.reserve(mc_payoffs.size());
