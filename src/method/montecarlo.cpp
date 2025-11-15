@@ -105,3 +105,5 @@ double MonteCarloPricer::price(
     return total_payoff / (double)simulation_parameters_.thread_count;
 }
 
+}
+}
