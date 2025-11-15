@@ -1,39 +1,13 @@
 #include <print>
 #include <random>
-#include <cmath>
-#include <algorithm>
-#include <chrono>
-#include <string>
 #include <thread>
-#include <numeric>
+#include <cassert>
 
-#include "greeks.hpp"
-#include "eu_option_out.h"
-
-#include "rapidcsv.h"
-#include "monte_carlo.h"
-#include "black_scholes.h"
-#include "io.h"
-
-using hr_clock_t = std::chrono::high_resolution_clock;
-using ms_t = std::chrono::duration<double, std::milli>;
-
-struct perf_stats {
-    double mc_ms_total     = 0.0;
-    double bs_ms_total     = 0.0;
-    double mc_mean_ms      = 0.0;
-    double bs_mean_ms      = 0.0;
-    double mc_std_ms       = 0.0;
-    double bs_std_ms       = 0.0;
-    double options_per_min = 0.0;
-    double abs_diff_mean   = 0.0;
-};
-
-double stdev(const std::vector<double>& sample, double mean) {
-    double acc = 0.0;
-    for (auto x: sample) acc += (x - mean) * (x - mean);
-    return std::sqrt(acc / sample.size());
-}
+#include "pricer/model/montecarlo_parameters.h"
+#include "pricer/method/blackscholes.h"
+#include "pricer/method/montecarlo.h"
+#include "pricer/method/portfolio_pricer.h"
+#include "pricer/util/io.h"
 
 int main(int argsc, const char* argsv[]) {
     if (argsc <= 1) {
@@ -41,92 +15,55 @@ int main(int argsc, const char* argsv[]) {
         return 0;
 
     }
-    auto eu_options_list = load_options_from_csv(argsv[1]);
+    auto eu_options_list = pricer::util::loadOptionsFromCsv(argsv[1]);
 
-    const uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
-    const uint32_t max_threads  = std::thread::hardware_concurrency();
-    const uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
-    const monte_carlo_parameters params{sample_count, thread_count};
-
-    const size_t num_options = eu_options_list.size();
-    double total_time = 0.0;
-    
-    std::vector<eu_option_out> priced_options;
-    priced_options.reserve(num_options);
-
-    std::vector<double> mc_times, bs_times, diffs;
-    mc_times.reserve(num_options);
-    bs_times.reserve(num_options);
-    diffs.reserve(num_options);
+    uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
+    uint32_t max_threads  = std::thread::hardware_concurrency();
+    uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
+    pricer::model::MontecarloParameters params{sample_count, thread_count};
 
     std::random_device rd;
-    for (const eu_option& option: eu_options_list) {
-        const unsigned int seed = rd();
-        const auto mc_pricing = [&params, seed](const eu_option& op) {
-            return monte_carlo_pricing(op, params, seed); 
-        };
+    unsigned int seed = rd();
+    pricer::method::montecarlo::MonteCarloPricer mc{seed, params};
 
-        auto start = hr_clock_t::now();
-        const double mc_payoff = mc_pricing(option);
-        auto end = hr_clock_t::now();
-        
-        auto mc_dt = ms_t(end - start).count();
+    pricer::method::blackscholes::BlackScholesPricer bs;
 
-        double delta = greeks::delta(option, mc_pricing);
-        double gamma = greeks::gamma(option, mc_pricing);
-        double vega  = greeks::vega(option, mc_pricing);
-        double theta = greeks::theta(option, mc_pricing);
-        double rho   = greeks::rho(option, mc_pricing);
+#ifdef BENCHMARK_OPTIONS
+    auto [mc_payoffs, mc_st] = pricer::method::portfolio::price(eu_options_list, mc); 
+    auto [bs_payoffs, bs_st] = pricer::method::portfolio::price(eu_options_list, bs); 
+#else 
+    auto mc_payoffs = pricer::method::portfolio::price(eu_options_list, mc); 
+    auto bs_payoffs = pricer::method::portfolio::price(eu_options_list, bs); 
+#endif
 
-        start = hr_clock_t::now();
-        const double bs_payoff = black_scholes_pricing(option);
-        end = hr_clock_t::now();
+    auto mc_greeks  = pricer::method::portfolio::calculateGreeks(eu_options_list, mc); 
 
-        auto bs_dt = ms_t(end - start).count();
+    assert(
+        mc_payoffs.size() == bs_payoffs.size() &&
+       "Mismatch in Monte Carlo and Black-Scholes payoff counts"
+    );
 
-        // std::println("delta BS: {}", eval_delta(option, black_scholes_pricing));
+    pricer::util::saveOptionsToCsv("./output.csv", eu_options_list, mc_payoffs, mc_greeks);
 
-        priced_options.emplace_back(eu_option_out{
-            option.type,
-            option.spot,
-            option.strike,
-            option.expiry,
-            option.volatility,
-            option.rate,
-            mc_payoff,
-            delta,
-            gamma,
-            vega,
-            rho,
-            theta
-        });
-        mc_times.emplace_back(mc_dt);
-        bs_times.emplace_back(bs_dt);
-        diffs.emplace_back(mc_payoff - bs_payoff);
-    }
+    std::vector<double> diffs;
+    diffs.reserve(mc_payoffs.size());
 
-    save_options_to_csv("./output.csv", priced_options);
+    for (const auto& [mc_payoff, bs_payoff] : std::views::zip(mc_payoffs, bs_payoffs)) 
+        diffs.push_back(mc_payoff - bs_payoff);
 
-    perf_stats st;
-    st.mc_ms_total     = std::accumulate(mc_times.begin(), mc_times.end(), 0.0);
-    st.bs_ms_total     = std::accumulate(bs_times.begin(), bs_times.end(), 0.0);
-    st.mc_mean_ms      = st.mc_ms_total / num_options;
-    st.bs_mean_ms      = st.bs_ms_total / num_options;
-    st.mc_std_ms       = stdev(mc_times, st.mc_mean_ms);
-    st.bs_std_ms       = stdev(bs_times, st.bs_mean_ms);
-    st.options_per_min = num_options / (st.mc_ms_total / 1000.0 / 60.0);
-    st.abs_diff_mean   = std::fabs(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
-
+    double abs_diff_mean = std::fabs(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
 
     std::println("----- Performance Summary -----");
     std::println("Simulation Samples:  {}", params.sample_count);
     std::println("Requested threads:   {}", params.thread_count);
     std::println("Total options:       {}", eu_options_list.size());
-    // std::println("Total runtime:       {} s", total_ms / 1000.0);
-    std::println("Throughput:          {:.03f} options/min", st.options_per_min);
-    std::println("MC mean time:        {:.03f} ±{:.03f}ms", st.mc_mean_ms, st.mc_std_ms);
-    std::println("BS mean time:        {:.03f} ±{:.03f}ms", st.bs_mean_ms, st.bs_std_ms);
-    std::println("Mean |MC-BS|:        {:.03f}", st.abs_diff_mean);
+#ifdef BENCHMARK_OPTIONS
+    std::println("MC Throughput:       {:.03f} options/min", mc_st.options_per_min);
+    std::println("BS Throughput:       {:.03f} options/min", bs_st.options_per_min);
+    std::println("MC mean time:        {:.03f} ±{:.03f}ms", mc_st.mean_ms, mc_st.std_ms);
+    std::println("BS mean time:        {:.03f} ±{:.03f}ms", bs_st.mean_ms, bs_st.std_ms);
+#endif
+    std::println("Mean |MC-BS|:        {:.03f}", abs_diff_mean);
     std::println("-------------------------------");
 
     return 0;

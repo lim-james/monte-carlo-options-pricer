@@ -1,1 +1,2 @@
-g++ -std=c++23 -Iinclude src/*.cpp -o simulate
+cmake -B build
+cmake --build build
