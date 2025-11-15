@@ -2,7 +2,10 @@
 
 #include <format>
 #include <string>
+#include <ranges>
+#include <functional>
 
+#include "pricer/model/european.h"
 #include "pricer/util/rapidcsv.h"
 #include "pricer/model/option_type.h"
 
@@ -24,25 +27,26 @@ enum OptionCSVColumn {
     COL_THETA
 };
 
+model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, size_t row_index) {
+    return model::EuropeanOption{
+        static_cast<model::OptionType>(
+            csv.GetCell<int>(OptionCSVColumn::COL_TYPE, row_index)
+        ),
+        csv.GetCell<double>(OptionCSVColumn::COL_SPOT, row_index),
+        csv.GetCell<double>(OptionCSVColumn::COL_STRIKE, row_index),
+        csv.GetCell<double>(OptionCSVColumn::COL_EXPIRY, row_index),
+        csv.GetCell<double>(OptionCSVColumn::COL_VOLATILITY, row_index),
+        csv.GetCell<double>(OptionCSVColumn::COL_RATE, row_index)
+    };
+}
+
 [[nodiscard("Loaded options unused")]] 
 std::vector<model::EuropeanOption> loadOptionsFromCsv(const char* filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 
-    const size_t no_rows = csv.GetRowCount();
-    std::vector<model::EuropeanOption> options_list{no_rows};
-
-    for (size_t i = 0; i < no_rows; ++i) {
-        options_list[i] = model::EuropeanOption{
-            static_cast<model::OptionType>(csv.GetCell<int>(OptionCSVColumn::COL_TYPE, i)),
-            csv.GetCell<double>(OptionCSVColumn::COL_SPOT, i),
-            csv.GetCell<double>(OptionCSVColumn::COL_STRIKE, i),
-            csv.GetCell<double>(OptionCSVColumn::COL_EXPIRY, i),
-            csv.GetCell<double>(OptionCSVColumn::COL_VOLATILITY, i),
-            csv.GetCell<double>(OptionCSVColumn::COL_RATE, i)
-        };
-    }
-
-    return options_list;
+    return std::views::iota(csv.GetRowCount()) 
+        | std::views::transform(std::bind_front(parseOptionFromRow, std::ref(csv))) 
+        | std::ranges::to<std::vector>();
 }
 
 void saveOptionsToCsv(
