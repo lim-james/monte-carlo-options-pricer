@@ -10,19 +10,32 @@
 #include "pricer/method/portfolio_pricer.hpp"
 #include "pricer/util/io.h"
 
+struct CliArguments {
+    const char* filepath;
+    uint32_t sample_count;
+    uint32_t thread_count;
+};
+
+CliArguments parse_arguments(int argsc, const char* argsv[]) {
+    constexpr uint32_t DEFAULT_SAMPLE_COUNT = 1000000;
+    uint32_t MAX_THREADS  = std::thread::hardware_concurrency();
+
+    uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : DEFAULT_SAMPLE_COUNT;
+    uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : MAX_THREADS;
+
+    return CliArguments{argsv[1], sample_count, thread_count}; 
+}
+
 int main(int argsc, const char* argsv[]) {
     if (argsc <= 1) {
         std::println("Please provide a .csv filepath");
         return 0;
-
     }
 
-    auto eu_options_list = pricer::util::loadOptionsFromCsv(argsv[1]);
+    auto arguments = parse_arguments(argsc, argsv);
 
-    uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
-    uint32_t max_threads  = std::thread::hardware_concurrency();
-    uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : max_threads;
-    pricer::model::MontecarloParameters params{sample_count, thread_count};
+    auto eu_options_list = pricer::util::loadOptionsFromCsv(arguments.filepath);
+    pricer::model::MontecarloParameters params{arguments.sample_count, arguments.thread_count};
 
     std::random_device rd;
     unsigned int seed = rd();
@@ -48,7 +61,7 @@ int main(int argsc, const char* argsv[]) {
     diffs.reserve(bs_payoffs.size());
 
     auto mc_payoffs = mc_priced_options | std::views::transform([](auto priced_option){
-        return priced_option.payout;
+        return priced_option.payoff;
     });
     for (const auto& [mc_payoff, bs_payoff] : std::views::zip(mc_payoffs, bs_payoffs)) 
         diffs.push_back(mc_payoff - bs_payoff);

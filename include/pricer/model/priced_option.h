@@ -6,7 +6,7 @@
 namespace pricer::model {
 
 struct PricedOption {
-    double payout;
+    double payoff;
     OptionGreeks greeks;
     EuropeanOption option;
 };
