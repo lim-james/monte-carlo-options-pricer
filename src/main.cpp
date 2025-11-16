@@ -2,6 +2,7 @@
 #include <random>
 #include <thread>
 #include <cassert>
+#include <algorithm>
 
 #include "pricer/model/montecarlo_parameters.h"
 #include "pricer/method/blackscholes.h"
@@ -26,7 +27,6 @@ int main(int argsc, const char* argsv[]) {
     std::random_device rd;
     unsigned int seed = rd();
     pricer::method::montecarlo::MonteCarloPricer mc{seed, params};
-
     pricer::method::blackscholes::BlackScholesPricer bs;
 
 #ifdef BENCHMARK_OPTIONS
@@ -56,7 +56,7 @@ int main(int argsc, const char* argsv[]) {
     for (const auto& [mc_payoff, bs_payoff] : std::views::zip(mc_payoffs, bs_payoffs)) 
         diffs.push_back(mc_payoff - bs_payoff);
 
-    double abs_diff_mean = std::fabs(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+    double abs_diff_mean = std::fabs(std::ranges::fold_left(diffs, 0.0, std::plus{}) / diffs.size());
 
     std::println("----- Performance Summary -----");
     std::println("Simulation Samples:  {}", params.sample_count);
