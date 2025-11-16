@@ -1,5 +1,6 @@
 #include "pricer/method/montecarlo.h"
 
+#include <functional>
 #include <algorithm>
 #include <cmath>
 #include <thread>
@@ -9,49 +10,53 @@
 namespace pricer {
 namespace method::montecarlo {
 
-double grow(const model::EuropeanOption& option, std::mt19937& gen) {
+double calculate_future_price(const model::EuropeanOption& option, std::mt19937& gen) {
     thread_local std::normal_distribution<> dist(0.0, 1.0);
 
-    const double Z = dist(gen);
-    const double a = option.rate - 0.5 * option.volatility * option.volatility;
-    const double b = option.volatility * std::sqrt(option.expiry) * Z;
-    const double c = std::exp(a * option.expiry + b);
+    // TODO: figure out better names
+    double Z = dist(gen);
+    double a = option.rate - 0.5 * option.volatility * option.volatility;
+    double b = option.volatility * std::sqrt(option.expiry) * Z;
+    double c = std::exp(a * option.expiry + b);
      
     return option.spot * c;
 }
 
-inline double discount(double future_price, double rate, double time_to_expiry) {
-    return future_price * exp(-rate * time_to_expiry);
+inline double apply_discount(double future_price, double market_rate, double time_to_expiry) {
+    return future_price * std::exp(-market_rate * time_to_expiry);
 }
 
-double payoff(const model::EuropeanOption& option, std::mt19937& gen) {
-    double future_price = grow(option, gen);
+double calculate_discounted_payoff(const model::EuropeanOption& option, std::mt19937& gen) {
+    double future_price = calculate_future_price(option, gen);
     double raw_payoff = option.type == model::OptionType::Call 
         ? std::max(future_price - option.strike, 0.0)
         : std::max(option.strike - future_price, 0.0);
-    double discounted_payoff = discount(raw_payoff, option.rate, option.expiry);
+    double discounted_payoff = apply_discount(raw_payoff, option.rate, option.expiry);
     return discounted_payoff;
 }
 
-inline unsigned int thread_seed(unsigned int seed, unsigned int thread_id) {
-    return seed + 31 * thread_id;
+inline unsigned int generate_thread_seed(unsigned int seed, unsigned int thread_id) {
+    constexpr unsigned int THREAD_SEED_OFFSET = 31;
+    return seed + THREAD_SEED_OFFSET * thread_id;
 }
 
-void monte_carlo_pricing_batch(
+void price_batch_worker(
     const model::EuropeanOption& option, 
     size_t batch_size,
-    double* payoff_mem,
-    unsigned int seed,
-    unsigned int thread_id
+    unsigned int random_seed,
+    unsigned int thread_id,
+    double& payoff_output
 ) {
-    std::mt19937 gen(thread_seed(seed, thread_id));
+    unsigned int thread_local_seed = generate_thread_seed(random_seed, thread_id);
+    std::mt19937 gen(thread_local_seed);
 
-    auto payoff_branch = [&option, &gen](auto) { return payoff(option, gen); };
-    auto payoffs = std::views::repeat(0U, batch_size) 
-                 | std::views::transform(payoff_branch);
-    double total_payoff = std::ranges::fold_left(payoffs, 0, std::plus{});
+    auto simulate_payoff = std::bind_front(calculate_discounted_payoff, std::ref(option), std::ref(gen));
 
-    *payoff_mem = total_payoff / (double)batch_size;
+    std::vector<double> payoffs(batch_size);
+    std::ranges::generate(payoffs, simulate_payoff);
+    
+    double total_payoff = std::ranges::fold_left(payoffs, 0.0, std::plus{});
+    payoff_output = total_payoff / static_cast<double>(batch_size);
 }
 
 #ifdef TEST_ALIGNED
@@ -61,48 +66,51 @@ struct alignas(64) aligned_double {
 #endif
 
 MonteCarloPricer::MonteCarloPricer(
-    const unsigned int simulation_seed,
-    const model::MontecarloParameters& params
-) : simulation_seed_(simulation_seed), simulation_parameters_(params) {}
+    unsigned int simulation_seed,
+    const model::MontecarloParameters& simulation_parameters
+) : simulation_seed_(simulation_seed), simulation_parameters_(simulation_parameters) {}
 
 double MonteCarloPricer::price(
     const model::EuropeanOption& option
 ) const {
 #ifdef TEST_ALIGNED
-    std::vector<aligned_double> avg_payoffs(params.thread_count); 
+    std::vector<aligned_double> avg_payoffs(simulation_parameters_.thread_count); 
 #else
     std::vector<double> avg_payoffs(simulation_parameters_.thread_count); 
 #endif
 
     {
+        size_t batch_size = simulation_parameters_.sample_count / simulation_parameters_.thread_count;
+
         std::vector<std::jthread> threads;
         threads.reserve(simulation_parameters_.thread_count);
 
-        for (auto i : std::views::iota(0u, simulation_parameters_.thread_count))
+        for (auto thread_id : std::views::iota(0u, simulation_parameters_.thread_count)) {
             threads.emplace_back(
-                monte_carlo_pricing_batch, 
+                price_batch_worker, 
                 std::ref(option), 
-                simulation_parameters_.sample_count / simulation_parameters_.thread_count,
-#ifdef TEST_ALIGNED
-                &(avg_payoffs[i].x),
-#else
-                &avg_payoffs[i],
-#endif
+                batch_size,
                 simulation_seed_,
-                i
+                thread_id,
+#ifdef TEST_ALIGNED
+                std::ref(avg_payoffs[thread_id].x)
+#else
+                std::ref(avg_payoffs[thread_id])
+#endif
             );
+        }
     }
 
 #ifdef TEST_ALIGNED
     double total_payoff = 0.0;
-    for (unsigned int i = 0; i < params.thread_count; ++i) {
+    for (unsigned int i = 0; i < simulation_parameters_.thread_count; ++i) {
         total_payoff += avg_payoffs[i].x;
     }
 #else
-    double total_payoff = std::accumulate(avg_payoffs.begin(), avg_payoffs.end(), 0.0);
+    double total_payoff = std::ranges::fold_left(avg_payoffs, 0.0, std::plus{});
 #endif
 
-    return total_payoff / (double)simulation_parameters_.thread_count;
+    return total_payoff / static_cast<double>(simulation_parameters_.thread_count);
 }
 
 }

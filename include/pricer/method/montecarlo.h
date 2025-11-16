@@ -13,7 +13,7 @@ private:
 
 public:
     MonteCarloPricer(
-        const unsigned int simulation_seed,
+        unsigned int simulation_seed,
         const model::MontecarloParameters& params
     );
 

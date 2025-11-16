@@ -15,6 +15,7 @@ int main(int argsc, const char* argsv[]) {
         return 0;
 
     }
+
     auto eu_options_list = pricer::util::loadOptionsFromCsv(argsv[1]);
 
     uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : 1000000;
@@ -35,7 +36,6 @@ int main(int argsc, const char* argsv[]) {
     auto mc_payoffs = pricer::method::portfolio::price(eu_options_list, mc); 
     auto bs_payoffs = pricer::method::portfolio::price(eu_options_list, bs); 
 #endif
-
     auto mc_greeks  = pricer::method::portfolio::calculateGreeks(eu_options_list, mc); 
 
     assert(
