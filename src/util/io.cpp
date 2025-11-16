@@ -106,10 +106,9 @@ void savePricedOptionsToCsv(
     writeHeaders(csv);
 
     for (size_t i = 0; i < options.size(); ++i) {
-        const auto& [payoff, greeks, option] = options[i];
-        writeOption(csv, i, option);
-        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, payoff);
-        writeOptionGreeks(csv, i, greeks);
+        writeOption(csv, i, options[i].option);
+        writeOptionGreeks(csv, i, options[i].greeks);
+        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, options[i].payoff);
     }
 
     csv.Save(filepath);
