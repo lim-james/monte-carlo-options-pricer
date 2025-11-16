@@ -6,6 +6,7 @@
 #include <functional>
 
 #include "pricer/model/european.h"
+#include "pricer/model/option_greeks.h"
 #include "pricer/util/rapidcsv.h"
 #include "pricer/model/option_type.h"
 
@@ -49,12 +50,7 @@ std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::pat
         | std::ranges::to<std::vector>();
 }
 
-void savePricedOptionsToCsv(
-    const std::filesystem::path& filepath, 
-    const std::vector<model::EuropeanOption>& options,
-    const std::vector<double>& payoffs,
-    const std::vector<model::OptionGreeks>& greeks
-) {
+void writeHeaders(rapidcsv::Document& csv) {
     static const std::vector<std::string> header = {
         "type", 
         "spot", "strike", "expiry", "volatility", "rate", 
@@ -62,8 +58,54 @@ void savePricedOptionsToCsv(
         "delta", "gamma", "vega", "rho", "theta"
     };
 
-    rapidcsv::Document csv;
     csv.SetRow(-1, header);
+}
+
+void writeOption(
+    rapidcsv::Document& csv, 
+    size_t row_index, 
+    const model::EuropeanOption& option
+) {
+    csv.SetCell(OptionCSVColumn::COL_TYPE,       row_index, static_cast<int>(option.type));
+    csv.SetCell(OptionCSVColumn::COL_SPOT,       row_index, option.spot);
+    csv.SetCell(OptionCSVColumn::COL_STRIKE,     row_index, option.strike);
+    csv.SetCell(OptionCSVColumn::COL_EXPIRY,     row_index, option.expiry);
+    csv.SetCell(OptionCSVColumn::COL_VOLATILITY, row_index, option.volatility);
+    csv.SetCell(OptionCSVColumn::COL_RATE,       row_index, option.rate);
+}
+
+void writeOptionPayoff(
+    rapidcsv::Document& csv, 
+    size_t row_index, 
+    double payoff
+) {
+}
+
+void writeOptionGreeks(
+    rapidcsv::Document& csv, 
+    size_t row_index,
+    const model::OptionGreeks& greeks
+) {
+    csv.SetCell(OptionCSVColumn::COL_DELTA, row_index, greeks.delta);
+    csv.SetCell(OptionCSVColumn::COL_GAMMA, row_index, greeks.gamma);
+    csv.SetCell(OptionCSVColumn::COL_VEGA,  row_index, greeks.vega);
+    csv.SetCell(OptionCSVColumn::COL_THETA, row_index, greeks.theta);
+    csv.SetCell(OptionCSVColumn::COL_RHO,   row_index, greeks.rho);
+}
+
+//void writeResult(
+//    rapidcsv::Document& csv,
+//    size_t row_index,
+//)
+
+void savePricedOptionsToCsv(
+    const std::filesystem::path& filepath, 
+    const std::vector<model::EuropeanOption>& options,
+    const std::vector<double>& payoffs,
+    const std::vector<model::OptionGreeks>& greeks
+) {
+    rapidcsv::Document csv;    
+    writeHeaders(csv);
 
     std::string missing_payoff_assertion = std::format(
         "Missing payoffs :: options[{}] != payoffs[{}]",
@@ -72,7 +114,7 @@ void savePricedOptionsToCsv(
     );
     assert(options.size() == payoffs.size() && missing_payoff_assertion.c_str());
 
-    std::string missiing_greek_assertion = std::format(
+    std::string missing_greek_assertion = std::format(
         "Missing greeks :: options[{}] != greeks[{}]",
         options.size(),
         greeks.size()
@@ -80,23 +122,9 @@ void savePricedOptionsToCsv(
     assert(options.size() == greeks.size() && missing_payoff_assertion.c_str());
 
     for (size_t i = 0; i < options.size(); ++i) {
-        const model::EuropeanOption& op = options[i];
-        const model::OptionGreeks& g = greeks[i];
-
-        csv.SetCell(OptionCSVColumn::COL_TYPE,       i, static_cast<int>(op.type));
-        csv.SetCell(OptionCSVColumn::COL_SPOT,       i, op.spot);
-        csv.SetCell(OptionCSVColumn::COL_STRIKE,     i, op.strike);
-        csv.SetCell(OptionCSVColumn::COL_EXPIRY,     i, op.expiry);
-        csv.SetCell(OptionCSVColumn::COL_VOLATILITY, i, op.volatility);
-        csv.SetCell(OptionCSVColumn::COL_RATE,       i, op.rate);
-
+        writeOption(csv, i, options[i]);
         csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, payoffs[i]);
-
-        csv.SetCell(OptionCSVColumn::COL_DELTA, i, g.delta);
-        csv.SetCell(OptionCSVColumn::COL_GAMMA, i, g.gamma);
-        csv.SetCell(OptionCSVColumn::COL_VEGA,  i, g.vega);
-        csv.SetCell(OptionCSVColumn::COL_THETA, i, g.theta);
-        csv.SetCell(OptionCSVColumn::COL_RHO,   i, g.rho);
+        writeOptionGreeks(csv, i, greeks[i]);
     }
 
     csv.Save(filepath);
