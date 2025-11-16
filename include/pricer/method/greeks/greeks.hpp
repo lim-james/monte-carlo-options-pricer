@@ -6,12 +6,12 @@
 
 namespace pricer {
 namespace method::greeks {
-    model::OptionGreeks calculate(const model::EuropeanOption& option, auto&& pricing_fn) {
-        double delta = internal::delta(option, pricing_fn);
-        double gamma = internal::gamma(option, pricing_fn);
-        double vega  = internal::vega (option, pricing_fn);
-        double theta = internal::theta(option, pricing_fn);
-        double rho   = internal::rho  (option, pricing_fn);
+    model::OptionGreeks calculate(const model::EuropeanOption& option, auto&& pricer) {
+        double delta = internal::delta(option, pricer);
+        double gamma = internal::gamma(option, pricer);
+        double vega  = internal::vega (option, pricer);
+        double theta = internal::theta(option, pricer);
+        double rho   = internal::rho  (option, pricer);
         return model::OptionGreeks{delta, gamma, vega, theta, rho};
     }
 }
