@@ -1,6 +1,5 @@
 #include "pricer/util/io.h"
 
-#include <format>
 #include <string>
 #include <ranges>
 #include <functional>
@@ -74,13 +73,6 @@ void writeOption(
     csv.SetCell(OptionCSVColumn::COL_RATE,       row_index, option.rate);
 }
 
-void writeOptionPayoff(
-    rapidcsv::Document& csv, 
-    size_t row_index, 
-    double payoff
-) {
-}
-
 void writeOptionGreeks(
     rapidcsv::Document& csv, 
     size_t row_index,
@@ -93,11 +85,6 @@ void writeOptionGreeks(
     csv.SetCell(OptionCSVColumn::COL_RHO,   row_index, greeks.rho);
 }
 
-//void writeResult(
-//    rapidcsv::Document& csv,
-//    size_t row_index,
-//)
-
 void savePricedOptionsToCsv(
     const std::filesystem::path& filepath, 
     const std::vector<model::PricedOption>& options
@@ -105,10 +92,10 @@ void savePricedOptionsToCsv(
     rapidcsv::Document csv;    
     writeHeaders(csv);
 
-    for (size_t i = 0; i < options.size(); ++i) {
-        writeOption(csv, i, options[i].option);
-        writeOptionGreeks(csv, i, options[i].greeks);
-        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, options[i].payoff);
+    for (const auto& [index, priced_option] : options | std::views::enumerate) {
+        writeOption(csv, index, priced_option.option);
+        writeOptionGreeks(csv, index, priced_option.greeks);
+        csv.SetCell(OptionCSVColumn::COL_PAYOFF, index, priced_option.payoff);
     }
 
     csv.Save(filepath);
