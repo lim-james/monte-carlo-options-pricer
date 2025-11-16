@@ -45,7 +45,7 @@ model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, size_t r
 std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::path& filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 
-    return std::views::iota(csv.GetRowCount()) 
+    return std::views::iota(0U, csv.GetRowCount()) 
         | std::views::transform(std::bind_front(parseOptionFromRow, std::ref(csv))) 
         | std::ranges::to<std::vector>();
 }
