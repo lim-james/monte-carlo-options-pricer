@@ -100,31 +100,16 @@ void writeOptionGreeks(
 
 void savePricedOptionsToCsv(
     const std::filesystem::path& filepath, 
-    const std::vector<model::EuropeanOption>& options,
-    const std::vector<double>& payoffs,
-    const std::vector<model::OptionGreeks>& greeks
+    const std::vector<model::PricedOption>& options
 ) {
     rapidcsv::Document csv;    
     writeHeaders(csv);
 
-    std::string missing_payoff_assertion = std::format(
-        "Missing payoffs :: options[{}] != payoffs[{}]",
-        options.size(),
-        payoffs.size()
-    );
-    assert(options.size() == payoffs.size() && missing_payoff_assertion.c_str());
-
-    std::string missing_greek_assertion = std::format(
-        "Missing greeks :: options[{}] != greeks[{}]",
-        options.size(),
-        greeks.size()
-    );
-    assert(options.size() == greeks.size() && missing_payoff_assertion.c_str());
-
     for (size_t i = 0; i < options.size(); ++i) {
-        writeOption(csv, i, options[i]);
-        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, payoffs[i]);
-        writeOptionGreeks(csv, i, greeks[i]);
+        const auto& [payoff, greeks, option] = options[i];
+        writeOption(csv, i, option);
+        csv.SetCell(OptionCSVColumn::COL_PAYOFF, i, payoff);
+        writeOptionGreeks(csv, i, greeks);
     }
 
     csv.Save(filepath);

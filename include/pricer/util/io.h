@@ -5,6 +5,7 @@
 
 #include "pricer/model/european.h"
 #include "pricer/model/option_greeks.h"
+#include "pricer/model/priced_option.h"
 
 namespace pricer {
 namespace util {
@@ -14,9 +15,7 @@ std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::pat
 
 void savePricedOptionsToCsv(
     const std::filesystem::path& filepath, 
-    const std::vector<model::EuropeanOption>& options,
-    const std::vector<double>& payoffs,
-    const std::vector<model::OptionGreeks>& greeks
+    const std::vector<model::PricedOption>& options
 );
 
 }
