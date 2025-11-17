@@ -27,7 +27,7 @@ enum OptionCSVColumn {
     COL_THETA
 };
 
-model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, size_t row_index) {
+model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, std::size_t row_index) {
     return model::EuropeanOption{
         static_cast<model::OptionType>(
             csv.GetCell<int>(OptionCSVColumn::COL_TYPE, row_index)
@@ -62,7 +62,7 @@ void writeHeaders(rapidcsv::Document& csv) {
 
 void writeOption(
     rapidcsv::Document& csv, 
-    size_t row_index, 
+    std::size_t row_index, 
     const model::EuropeanOption& option
 ) {
     csv.SetCell(OptionCSVColumn::COL_TYPE,       row_index, static_cast<int>(option.type));
@@ -75,7 +75,7 @@ void writeOption(
 
 void writeOptionGreeks(
     rapidcsv::Document& csv, 
-    size_t row_index,
+    std::size_t row_index,
     const model::OptionGreeks& greeks
 ) {
     csv.SetCell(OptionCSVColumn::COL_DELTA, row_index, greeks.delta);

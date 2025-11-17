@@ -18,7 +18,7 @@ inline double standardDeviation(const std::vector<double>& values, double mean) 
 }
 
 model::PerfStats calculatePerfStats(const std::vector<double>& times) {
-    size_t num_options = times.size();
+    std::size_t num_options = times.size();
     model::PerfStats stats;
     stats.total_ms = std::ranges::fold_left(times, 0.0, std::plus{});
     stats.mean_ms  = stats.total_ms / num_options;

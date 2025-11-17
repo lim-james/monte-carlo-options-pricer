@@ -3,6 +3,8 @@
 #include <thread>
 #include <cassert>
 #include <algorithm>
+#include <filesystem>
+#include <optional>
 
 #include "pricer/model/montecarlo_parameters.h"
 #include "pricer/method/blackscholes.h"
@@ -11,31 +13,35 @@
 #include "pricer/util/io.h"
 
 struct CliArguments {
-    const char* filepath;
-    uint32_t sample_count;
-    uint32_t thread_count;
+    std::filesystem::path filepath;
+    std::size_t sample_count;
+    std::size_t thread_count;
 };
 
-CliArguments parse_arguments(int argsc, const char* argsv[]) {
-    constexpr uint32_t DEFAULT_SAMPLE_COUNT = 1000000;
-    uint32_t MAX_THREADS  = std::thread::hardware_concurrency();
+std::optional<CliArguments> parse_arguments(int argsc, const char* argsv[]) {
+    if (argsc <= 1) {
+        return std::nullopt;
+    }
 
-    uint32_t sample_count = argsc > 2 ? std::stol(argsv[2]) : DEFAULT_SAMPLE_COUNT;
-    uint32_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : MAX_THREADS;
+    constexpr std::size_t DEFAULT_SAMPLE_COUNT = 1'000'000;
+    const std::size_t MAX_THREADS  = std::thread::hardware_concurrency();
+
+    std::size_t sample_count = argsc > 2 ? std::stol(argsv[2]) : DEFAULT_SAMPLE_COUNT;
+    std::size_t thread_count = argsc > 3 ? std::stoi(argsv[3]) : MAX_THREADS;
 
     return CliArguments{argsv[1], sample_count, thread_count}; 
 }
 
 int main(int argsc, const char* argsv[]) {
-    if (argsc <= 1) {
+    auto arguments = parse_arguments(argsc, argsv);
+
+    if (!arguments) {
         std::println("Please provide a .csv filepath");
         return 0;
     }
 
-    auto arguments = parse_arguments(argsc, argsv);
-
-    auto eu_options_list = pricer::util::loadOptionsFromCsv(arguments.filepath);
-    pricer::model::MontecarloParameters params{arguments.sample_count, arguments.thread_count};
+    auto eu_options_list = pricer::util::loadOptionsFromCsv(arguments->filepath);
+    pricer::model::MontecarloParameters params{arguments->sample_count, arguments->thread_count};
 
     std::random_device rd;
     unsigned int seed = rd();

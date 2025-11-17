@@ -80,7 +80,7 @@ double MonteCarloPricer::price(
 #endif
 
     {
-        size_t batch_size = simulation_parameters_.sample_count / simulation_parameters_.thread_count;
+        std::size_t batch_size = simulation_parameters_.sample_count / simulation_parameters_.thread_count;
 
         std::vector<std::jthread> threads;
         threads.reserve(simulation_parameters_.thread_count);
@@ -103,7 +103,7 @@ double MonteCarloPricer::price(
 
 #ifdef TEST_ALIGNED
     double total_payoff = 0.0;
-    for (unsigned int i = 0; i < simulation_parameters_.thread_count; ++i) {
+    for (std::size_t i = 0; i < simulation_parameters_.thread_count; ++i) {
         total_payoff += avg_payoffs[i].x;
     }
 #else
