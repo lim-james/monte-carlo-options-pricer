@@ -3,6 +3,9 @@
 #include "pricer/model/european.h"
 #include "pricer/model/montecarlo_parameters.h"
 
+#include <random>
+#include <utility>
+
 namespace pricer {
 namespace method::montecarlo {
 
@@ -18,7 +21,17 @@ public:
     );
 
     double price(const model::EuropeanOption& option) const;
+
 };
+
+template<typename ...Args>
+MonteCarloPricer makeMonteCarloPricer(Args&&... args) {
+    thread_local std::random_device rd;
+    return MonteCarloPricer{
+        rd(), 
+        model::MontecarloParameters{std::forward<Args>(args)...}
+    };
+}
 
 }
 }

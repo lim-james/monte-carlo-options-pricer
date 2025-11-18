@@ -40,20 +40,20 @@ int main(int argsc, const char* argsv[]) {
         return 0;
     }
 
-    auto eu_options_list = pricer::util::loadOptionsFromCsv(arguments->filepath);
-    pricer::model::MontecarloParameters params{arguments->sample_count, arguments->thread_count};
+    auto european_options = pricer::util::loadOptionsFromCsv(arguments->filepath);
 
-    std::random_device rd;
-    unsigned int seed = rd();
-    pricer::method::montecarlo::MonteCarloPricer mc{seed, params};
+    auto mc = pricer::method::montecarlo::makeMonteCarloPricer(
+        arguments->sample_count, 
+        arguments->thread_count
+    );
     pricer::method::blackscholes::BlackScholesPricer bs;
 
 #ifdef BENCHMARK_OPTIONS
-    auto [mc_priced_options, mc_stats] = pricer::method::portfolio::priceWithGreeks(eu_options_list, mc); 
-    auto [bs_payoffs, bs_stats] = pricer::method::portfolio::price(eu_options_list, bs); 
+    auto [mc_priced_options, mc_stats] = pricer::method::portfolio::priceWithGreeks(european_options, mc); 
+    auto [bs_payoffs, bs_stats] = pricer::method::portfolio::price(european_options, bs); 
 #else 
-    auto mc_priced_options = pricer::method::portfolio::priceWithGreeks(eu_options_list, mc); 
-    auto bs_payoffs = pricer::method::portfolio::price(eu_options_list, bs); 
+    auto mc_priced_options = pricer::method::portfolio::priceWithGreeks(european_options, mc); 
+    auto bs_payoffs = pricer::method::portfolio::price(european_options, bs); 
 #endif
 
     assert(
@@ -75,9 +75,9 @@ int main(int argsc, const char* argsv[]) {
     double abs_diff_mean = std::fabs(std::ranges::fold_left(diffs, 0.0, std::plus{}) / diffs.size());
 
     std::println("----- Performance Summary -----");
-    std::println("Simulation Samples:  {}", params.sample_count);
-    std::println("Requested threads:   {}", params.thread_count);
-    std::println("Total options:       {}", eu_options_list.size());
+    std::println("Simulation Samples:  {}", arguments->sample_count);
+    std::println("Requested threads:   {}", arguments->thread_count);
+    std::println("Total options:       {}", european_options.size());
 #ifdef BENCHMARK_OPTIONS
     std::println("MC Throughput:       {:.03f} options/min", mc_stats.options_per_min);
     std::println("BS Throughput:       {:.03f} options/min", bs_stats.options_per_min);
