@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-namespace parser::cli {
+namespace pricer::cli {
 
 struct CliArguments {
     std::filesystem::path filepath;

@@ -2,7 +2,7 @@
 
 #include <thread>
 
-namespace parser::cli {
+namespace pricer::cli {
 
 std::optional<CliArguments> parse_arguments(int argsc, const char* argsv[]) {
     if (argsc <= 1) {
