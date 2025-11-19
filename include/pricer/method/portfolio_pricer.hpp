@@ -1,7 +1,7 @@
 #pragma once
-#include "pricer/model/priced_option.h"
 #define BENCHMARK_OPTIONS
 
+#include <print>
 #include <chrono>
 #include <vector>
 #include <ranges>
@@ -10,6 +10,7 @@
 #include "pricer/model/european.h"
 #include "pricer/model/perf_stats.h"
 #include "pricer/model/option_greeks.h"
+#include "pricer/model/priced_option.h"
 #include "pricer/method/option_pricer.h"
 #include "pricer/method/greeks/greeks.hpp"
 #include "pricer/util/calc_perf_stats.h"
@@ -20,17 +21,14 @@ using ms_t = std::chrono::duration<double, std::milli>;
 namespace pricer {
 namespace method::portfolio {
 
-#ifdef BENCHMARK_OPTIONS
-
 template<OptionPricer P>
-std::tuple<std::vector<double>, model::PerfStats> price(
+std::vector<double> price_and_benchmark(
     const std::vector<model::EuropeanOption>& options, 
     const P& pricer
 ) {
     std::vector<double> payoffs, times;
     payoffs.reserve(options.size());
     times.reserve(options.size());
-
 
     for (const auto& opt: options) {
         auto start = hr_clock_t::now();
@@ -42,10 +40,15 @@ std::tuple<std::vector<double>, model::PerfStats> price(
         payoffs.push_back(payoff);
     }
 
-    return {payoffs, util::calculate_perf_stats(times)};
-}
+    model::PerfStats performance_stats = util::calculate_perf_stats(times);
 
-#else
+    std::println("-----  PRICING PERFORMANCE -----");
+    std::println("Throughput: {:.03f} options/min", performance_stats.options_per_min);
+    std::println("Mean time:  {:.03f} ±{:.03f}ms", performance_stats.mean_ms, performance_stats.std_ms);
+    std::println("--------------------------------");
+
+    return payoffs;
+}
 
 template<OptionPricer P>
 std::vector<double> price(
@@ -53,11 +56,10 @@ std::vector<double> price(
     const P& pricer
 ) {
     return options 
-    | std::views::transform(std::bind_front(&P::price, pricer)) 
-    | std::ranges::to<std::vector>();
+        | std::views::transform(std::bind_front(&P::price, pricer)) 
+        | std::ranges::to<std::vector>();
 }
 
-#endif
 
 template<OptionPricer P>
 std::vector<model::OptionGreeks> calculate_greeks(
@@ -80,7 +82,7 @@ auto price_with_greeks(
     const P& pricer
 ) {
 #ifdef BENCHMARK_OPTIONS
-    auto [payoffs, stats] = price(options, pricer);
+    auto payoffs = price_and_benchmark(options, pricer);
 #else
     auto payoffs = price(options, pricer);
 #endif
@@ -94,11 +96,7 @@ auto price_with_greeks(
         }) 
         | std::ranges::to<std::vector>();
 
-#ifdef BENCHMARK_OPTIONS
-    return std::pair{priced_options, stats};
-#else
     return priced_options;
-#endif
 }
 
 }
