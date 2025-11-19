@@ -1,12 +1,10 @@
 #include <print>
-#include <random>
 #include <thread>
 #include <cassert>
 #include <algorithm>
 #include <filesystem>
 #include <optional>
 
-#include "pricer/model/montecarlo_parameters.h"
 #include "pricer/method/blackscholes.h"
 #include "pricer/method/montecarlo.h"
 #include "pricer/method/portfolio_pricer.hpp"
