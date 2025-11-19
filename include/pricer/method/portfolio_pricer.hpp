@@ -42,10 +42,10 @@ std::vector<double> price_and_benchmark(
 
     model::PerfStats performance_stats = util::calculate_perf_stats(times);
 
-    std::println("-----  PRICING PERFORMANCE -----");
+    std::println("{:-^30}", " PRICING PERFORMANCE "); 
     std::println("Throughput: {:.03f} options/min", performance_stats.options_per_min);
     std::println("Mean time:  {:.03f} ±{:.03f}ms", performance_stats.mean_ms, performance_stats.std_ms);
-    std::println("--------------------------------");
+    std::println("------------------------------");
 
     return payoffs;
 }
