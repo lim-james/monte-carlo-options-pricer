@@ -35,12 +35,9 @@ int main(int argsc, const char* argsv[]) {
     auto mc_priced_options = pricer::method::portfolio::price_with_greeks(european_options, mc); 
     auto bs_payoffs = pricer::method::portfolio::price(european_options, bs); 
 
-
     pricer::util::save_priced_options_to_csv("./output.csv", mc_priced_options);
 
-    auto mc_payoffs = mc_priced_options | std::views::transform([](auto priced_option){
-        return priced_option.payoff;
-    });
+    auto mc_payoffs = mc_priced_options | std::views::transform(&pricer::model::PricedOption::payoff);
 
     double abs_diff_mean = pricer::util::mean_absolute_difference(mc_payoffs, bs_payoffs);
     std::println("---------- VALIDATION ----------");
