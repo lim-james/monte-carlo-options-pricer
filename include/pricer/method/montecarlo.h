@@ -25,7 +25,7 @@ public:
 };
 
 template<typename ...Args>
-MonteCarloPricer makeMonteCarloPricer(Args&&... args) {
+MonteCarloPricer make_monte_carlo_pricer(Args&&... args) {
     thread_local std::random_device rd;
     return MonteCarloPricer{
         rd(), 

@@ -42,7 +42,7 @@ inline unsigned int generate_thread_seed(unsigned int seed, unsigned int thread_
 
 void price_batch_worker(
     const model::EuropeanOption& option, 
-    size_t batch_size,
+    std::size_t batch_size,
     unsigned int random_seed,
     unsigned int thread_id,
     double& payoff_output
@@ -68,7 +68,9 @@ struct alignas(64) aligned_double {
 MonteCarloPricer::MonteCarloPricer(
     unsigned int simulation_seed,
     const model::MontecarloParameters& simulation_parameters
-) : simulation_seed_(simulation_seed), simulation_parameters_(simulation_parameters) {}
+) 
+    : simulation_seed_(simulation_seed)
+    , simulation_parameters_(simulation_parameters) {}
 
 double MonteCarloPricer::price(
     const model::EuropeanOption& option

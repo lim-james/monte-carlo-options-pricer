@@ -42,7 +42,7 @@ std::tuple<std::vector<double>, model::PerfStats> price(
         payoffs.push_back(payoff);
     }
 
-    return {payoffs, util::calculatePerfStats(times)};
+    return {payoffs, util::calculate_perf_stats(times)};
 }
 
 #else
@@ -60,7 +60,7 @@ std::vector<double> price(
 #endif
 
 template<OptionPricer P>
-std::vector<model::OptionGreeks> calculateGreeks(
+std::vector<model::OptionGreeks> calculate_greeks(
     const std::vector<model::EuropeanOption>& options, 
     const P& pricer
 ) {
@@ -75,7 +75,7 @@ std::vector<model::OptionGreeks> calculateGreeks(
 }
 
 template<OptionPricer P>
-auto priceWithGreeks(
+auto price_with_greeks(
     const std::vector<model::EuropeanOption>& options, 
     const P& pricer
 ) {
@@ -85,7 +85,7 @@ auto priceWithGreeks(
     auto payoffs = price(options, pricer);
 #endif
 
-    auto greeks = calculateGreeks(options, pricer);
+    auto greeks = calculate_greeks(options, pricer);
 
     auto priced_options = std::views::zip(options, payoffs, greeks) 
         | std::views::transform([](const auto& tuple) {

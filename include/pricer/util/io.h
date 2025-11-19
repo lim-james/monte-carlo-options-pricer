@@ -11,9 +11,9 @@ namespace pricer {
 namespace util {
 
 [[nodiscard("Loaded options unused")]] 
-std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::path& filepath);
+std::vector<model::EuropeanOption> load_options_from_csv(const std::filesystem::path& filepath);
 
-void savePricedOptionsToCsv(
+void save_priced_options_to_csv(
     const std::filesystem::path& filepath, 
     const std::vector<model::PricedOption>& options
 );

@@ -27,7 +27,7 @@ enum OptionCSVColumn {
     COL_THETA
 };
 
-model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, std::size_t row_index) {
+model::EuropeanOption parse_option_from_row(const rapidcsv::Document& csv, std::size_t row_index) {
     return model::EuropeanOption{
         static_cast<model::OptionType>(
             csv.GetCell<int>(OptionCSVColumn::COL_TYPE, row_index)
@@ -41,15 +41,15 @@ model::EuropeanOption parseOptionFromRow(const rapidcsv::Document& csv, std::siz
 }
 
 [[nodiscard("Loaded options unused")]] 
-std::vector<model::EuropeanOption> loadOptionsFromCsv(const std::filesystem::path& filepath) {
+std::vector<model::EuropeanOption> load_options_from_csv(const std::filesystem::path& filepath) {
     rapidcsv::Document csv(filepath, rapidcsv::LabelParams(0, -1));
 
     return std::views::iota(0U, csv.GetRowCount()) 
-        | std::views::transform(std::bind_front(parseOptionFromRow, std::ref(csv))) 
+        | std::views::transform(std::bind_front(parse_option_from_row, std::ref(csv))) 
         | std::ranges::to<std::vector>();
 }
 
-void writeHeaders(rapidcsv::Document& csv) {
+void write_headers(rapidcsv::Document& csv) {
     static const std::vector<std::string> header = {
         "type", 
         "spot", "strike", "expiry", "volatility", "rate", 
@@ -60,7 +60,7 @@ void writeHeaders(rapidcsv::Document& csv) {
     csv.SetRow(-1, header);
 }
 
-void writeOption(
+void write_option(
     rapidcsv::Document& csv, 
     std::size_t row_index, 
     const model::EuropeanOption& option
@@ -73,7 +73,7 @@ void writeOption(
     csv.SetCell(OptionCSVColumn::COL_RATE,       row_index, option.rate);
 }
 
-void writeOptionGreeks(
+void write_option_greeks(
     rapidcsv::Document& csv, 
     std::size_t row_index,
     const model::OptionGreeks& greeks
@@ -85,16 +85,16 @@ void writeOptionGreeks(
     csv.SetCell(OptionCSVColumn::COL_RHO,   row_index, greeks.rho);
 }
 
-void savePricedOptionsToCsv(
+void save_priced_options_to_csv(
     const std::filesystem::path& filepath, 
     const std::vector<model::PricedOption>& options
 ) {
     rapidcsv::Document csv;    
-    writeHeaders(csv);
+    write_headers(csv);
 
     for (const auto& [index, priced_option] : options | std::views::enumerate) {
-        writeOption(csv, index, priced_option.option);
-        writeOptionGreeks(csv, index, priced_option.greeks);
+        write_option(csv, index, priced_option.option);
+        write_option_greeks(csv, index, priced_option.greeks);
         csv.SetCell(OptionCSVColumn::COL_PAYOFF, index, priced_option.payoff);
     }
 

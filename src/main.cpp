@@ -40,19 +40,19 @@ int main(int argsc, const char* argsv[]) {
         return 0;
     }
 
-    auto european_options = pricer::util::loadOptionsFromCsv(arguments->filepath);
+    auto european_options = pricer::util::load_options_from_csv(arguments->filepath);
 
-    auto mc = pricer::method::montecarlo::makeMonteCarloPricer(
+    auto mc = pricer::method::montecarlo::make_monte_carlo_pricer(
         arguments->sample_count, 
         arguments->thread_count
     );
     pricer::method::blackscholes::BlackScholesPricer bs;
 
 #ifdef BENCHMARK_OPTIONS
-    auto [mc_priced_options, mc_stats] = pricer::method::portfolio::priceWithGreeks(european_options, mc); 
+    auto [mc_priced_options, mc_stats] = pricer::method::portfolio::price_with_greeks(european_options, mc); 
     auto [bs_payoffs, bs_stats] = pricer::method::portfolio::price(european_options, bs); 
 #else 
-    auto mc_priced_options = pricer::method::portfolio::priceWithGreeks(european_options, mc); 
+    auto mc_priced_options = pricer::method::portfolio::price_with_greeks(european_options, mc); 
     auto bs_payoffs = pricer::method::portfolio::price(european_options, bs); 
 #endif
 
@@ -61,7 +61,7 @@ int main(int argsc, const char* argsv[]) {
        "Mismatch in Monte Carlo and Black-Scholes payoff counts"
     );
 
-    pricer::util::savePricedOptionsToCsv("./output.csv", mc_priced_options);
+    pricer::util::save_priced_options_to_csv("./output.csv", mc_priced_options);
 
     std::vector<double> diffs;
     diffs.reserve(bs_payoffs.size());
