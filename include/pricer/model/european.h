@@ -9,8 +9,8 @@ struct EuropeanOption {
     double spot;  
     double strike;  
     double expiry;  
-    double volatility;  
-    double rate;  
+    double implied_volatility;  
+    double risk_free_rate;  
 };
 
 }

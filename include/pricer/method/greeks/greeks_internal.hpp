@@ -57,7 +57,10 @@ namespace method::greeks::internal {
     }
 
     double vega(const model::EuropeanOption& option, auto&& pricer) {
-        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::volatility);
+        auto [h, option_upper, option_lower] = create_perturbed_options(
+            option, 
+            &model::EuropeanOption::implied_volatility
+        );
         return calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
     }
 
@@ -67,7 +70,10 @@ namespace method::greeks::internal {
     }
 
     double rho(const model::EuropeanOption& option, auto&& pricer) {
-        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::rate);
+        auto [h, option_upper, option_lower] = create_perturbed_options(
+            option,
+            &model::EuropeanOption::risk_free_rate
+        );
         return calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
     }
 }

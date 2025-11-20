@@ -15,8 +15,8 @@ double calculate_future_price(const model::EuropeanOption& option, std::mt19937&
 
     // TODO: figure out better names
     double Z = dist(gen);
-    double a = option.rate - 0.5 * option.volatility * option.volatility;
-    double b = option.volatility * std::sqrt(option.expiry) * Z;
+    double a = option.risk_free_rate - 0.5 * option.implied_volatility * option.implied_volatility;
+    double b = option.implied_volatility * std::sqrt(option.expiry) * Z;
     double c = std::exp(a * option.expiry + b);
      
     return option.spot * c;
@@ -31,7 +31,7 @@ double calculate_discounted_payoff(const model::EuropeanOption& option, std::mt1
     double raw_payoff = option.type == model::OptionType::Call 
         ? std::max(future_price - option.strike, 0.0)
         : std::max(option.strike - future_price, 0.0);
-    double discounted_payoff = apply_discount(raw_payoff, option.rate, option.expiry);
+    double discounted_payoff = apply_discount(raw_payoff, option.risk_free_rate, option.expiry);
     return discounted_payoff;
 }
 
