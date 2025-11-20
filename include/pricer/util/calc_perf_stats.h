@@ -7,7 +7,7 @@
 namespace pricer {
 namespace util {
 
-model::PerfStats calculatePerfStats(const std::vector<double>& times);
+model::PerfStats calculate_perf_stats(const std::vector<double>& times);
 
 }
 }

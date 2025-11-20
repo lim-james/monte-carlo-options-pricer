@@ -1,80 +1,80 @@
 #pragma once
 
+#include <tuple>
+
 #include "pricer/model/european.h"
 
 namespace pricer {
 namespace method::greeks::internal {
-    inline double eval_finite_step(double value) {
+    inline double calculate_finite_step(double value) {
         return 0.01 * value;
     }
 
-    inline double eval_finite_difference_first(
-        const model::EuropeanOption& up, 
-        const model::EuropeanOption& dn,
+    inline double calculate_finite_difference_first_order(
+        const model::EuropeanOption& option_upper, 
+        const model::EuropeanOption& option_lower,
         double h,
-        auto&& pricing_fn
+        auto&& pricer
     ) {
-        double up_payoff = pricing_fn(up);   
-        double dn_payoff = pricing_fn(dn);   
-        return (up_payoff - dn_payoff) / (2 * h);
+        double upper_payoff = pricer(option_upper);   
+        double lower_payoff = pricer(option_lower);   
+        return (upper_payoff - lower_payoff) / (2.0 * h);
     }
 
-    double delta(const model::EuropeanOption& option, auto&& pricing_fn) {
-        double h = eval_finite_step(option.spot);
-        model::EuropeanOption option_up = option;
-        option_up.spot += h;
-
-        model::EuropeanOption option_dn = option;
-        option_dn.spot -= h;
-
-        return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
+    inline double calculate_finite_difference_second_order(
+        const model::EuropeanOption& option, 
+        const model::EuropeanOption& option_upper, 
+        const model::EuropeanOption& option_lower,
+        double h,
+        auto&& pricer
+    ) {
+        double payoff = pricer(option);
+        double upper_payoff = pricer(option_upper);   
+        double lower_payoff = pricer(option_lower);   
+        return (upper_payoff - 2.0 * payoff + lower_payoff) / (h * h);
     }
 
-    double gamma(const model::EuropeanOption& option, auto&& pricing_fn) {
-        double h = eval_finite_step(option.spot);
-        model::EuropeanOption option_up = option;
-        option_up.spot += h;
+    template<typename MemberPtr> 
+    auto create_perturbed_options(const model::EuropeanOption& option, MemberPtr member_ptr) {
+        double h = calculate_finite_step(option.*member_ptr);
 
-        model::EuropeanOption option_dn = option;
-        option_dn.spot -= h;
+        model::EuropeanOption option_upper = option;
+        option_upper.*member_ptr += h;
+        model::EuropeanOption option_lower = option;
+        option_lower.*member_ptr -= h;
 
-        double payoff = pricing_fn(option);
-        double up_payoff = pricing_fn(option_up);   
-        double dn_payoff = pricing_fn(option_dn);   
-        return (up_payoff - 2 * payoff + dn_payoff) / (h * h);
+        return std::tuple{h, option_upper, option_lower};
     }
 
-    double vega(const model::EuropeanOption& option, auto&& pricing_fn) {
-        double h = eval_finite_step(option.volatility);
-        model::EuropeanOption option_up = option;
-        option_up.volatility += h;
-
-        model::EuropeanOption option_dn = option;
-        option_dn.volatility -= h;
-
-        return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
+    double delta(const model::EuropeanOption& option, auto&& pricer) {
+        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::spot);
+        return calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
     }
 
-    double theta(const model::EuropeanOption& option, auto&& pricing_fn) {
-        const double h = eval_finite_step(option.expiry);
-        model::EuropeanOption option_up = option;
-        option_up.expiry += h;
-
-        model::EuropeanOption option_dn = option;
-        option_dn.expiry -= h;
-
-        return -eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
+    double gamma(const model::EuropeanOption& option, auto&& pricer) {
+        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::spot);
+        return calculate_finite_difference_second_order(option, option_upper, option_lower, h, pricer);
     }
 
-    double rho(const model::EuropeanOption& option, auto&& pricing_fn) {
-        const double h = eval_finite_step(option.rate);
-        model::EuropeanOption option_up = option;
-        option_up.rate += h;
+    double vega(const model::EuropeanOption& option, auto&& pricer) {
+        auto [h, option_upper, option_lower] = create_perturbed_options(
+            option, 
+            &model::EuropeanOption::implied_volatility
+        );
+        return calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
+    }
 
-        model::EuropeanOption option_dn = option;
-        option_dn.rate -= h;
+    double theta(const model::EuropeanOption& option, auto&& pricer) {
+        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::expiry);
+        return -calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
+    }
 
-        return eval_finite_difference_first(option_up, option_dn, h, pricing_fn);
+    double rho(const model::EuropeanOption& option, auto&& pricer) {
+        auto [h, option_upper, option_lower] = create_perturbed_options(
+            option,
+            &model::EuropeanOption::risk_free_rate
+        );
+        return calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
     }
 }
 

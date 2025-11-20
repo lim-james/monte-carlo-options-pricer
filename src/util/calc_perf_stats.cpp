@@ -1,25 +1,33 @@
 #include "pricer/util/calc_perf_stats.h"
 
-#include <numeric>
 #include <cmath>
+#include <ranges>
+#include <algorithm>
 
 namespace pricer {
 namespace util {
 
-inline double stdev(const std::vector<double>& sample, double mean) {
-    double acc = 0.0;
-    for (auto x: sample) acc += (x - mean) * (x - mean);
-    return std::sqrt(acc / sample.size());
+inline double standard_deviation(const std::vector<double>& values, double mean) {
+    auto squared_diff = [mean](double x){return (x - mean) * (x - mean);};
+    double variance_sum = std::ranges::fold_left(
+        values | std::views::transform(squared_diff),
+        0.0,
+        std::plus{}
+    );
+    return std::sqrt(variance_sum / values.size());
 }
 
-model::PerfStats calculatePerfStats(const std::vector<double>& times) {
-    size_t num_options = times.size();
-    model::PerfStats st;
-    st.total_ms        = std::accumulate(times.begin(), times.end(), 0.0);
-    st.mean_ms         = st.total_ms / num_options;
-    st.std_ms          = stdev(times, st.mean_ms);
-    st.options_per_min = num_options / (st.total_ms / 1000.0 / 60.0);
-    return st;
+model::PerfStats calculate_perf_stats(const std::vector<double>& times) {
+    std::size_t num_options = times.size();
+    model::PerfStats stats;
+    stats.total_ms = std::ranges::fold_left(times, 0.0, std::plus{});
+    stats.mean_ms  = stats.total_ms / num_options;
+    stats.std_ms   = standard_deviation(times, stats.mean_ms);
+
+    constexpr double MS_PER_MINUTES = 60'000.0;
+    double total_mins     = stats.total_ms / MS_PER_MINUTES;
+    stats.options_per_min = num_options / total_mins;
+    return stats;
 }
 
 
