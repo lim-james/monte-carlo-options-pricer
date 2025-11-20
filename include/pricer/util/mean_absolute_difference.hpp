@@ -3,6 +3,7 @@
 #include <ranges>
 #include <cmath>
 #include <algorithm>
+#include <cassert>
 
 namespace pricer::util {
 
