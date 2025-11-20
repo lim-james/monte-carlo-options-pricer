@@ -12,13 +12,13 @@ inline double cdf(double x) {
 double BlackScholesPricer::price(const model::EuropeanOption& option) const {
     double d1_num_ln = std::log(option.spot / option.strike);
     double d1_num_rate = option.risk_free_rate + 0.5 * option.implied_volatility * option.implied_volatility;
-    double d1_num = d1_num_ln + d1_num_rate * option.expiry;
-    double d1_den = option.implied_volatility * std::sqrt(option.expiry);
+    double d1_num = d1_num_ln + d1_num_rate * option.time_to_expiry;
+    double d1_den = option.implied_volatility * std::sqrt(option.time_to_expiry);
     double d1 = d1_num / d1_den;
 
     double d2 = d1 - d1_den;
 
-    double present_strike_value_e = std::exp(-option.risk_free_rate * option.expiry);
+    double present_strike_value_e = std::exp(-option.risk_free_rate * option.time_to_expiry);
 
     if (option.type == model::OptionType::Call) {
         double value_at_expiry = option.spot * cdf(d1);

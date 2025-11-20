@@ -68,7 +68,7 @@ void write_option(
     csv.SetCell(OptionCSVColumn::COL_TYPE,       row_index, static_cast<int>(option.type));
     csv.SetCell(OptionCSVColumn::COL_SPOT,       row_index, option.spot);
     csv.SetCell(OptionCSVColumn::COL_STRIKE,     row_index, option.strike);
-    csv.SetCell(OptionCSVColumn::COL_EXPIRY,     row_index, option.expiry);
+    csv.SetCell(OptionCSVColumn::COL_EXPIRY,     row_index, option.time_to_expiry);
     csv.SetCell(OptionCSVColumn::COL_VOLATILITY, row_index, option.implied_volatility);
     csv.SetCell(OptionCSVColumn::COL_RATE,       row_index, option.risk_free_rate);
 }

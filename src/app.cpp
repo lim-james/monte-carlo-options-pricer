@@ -25,9 +25,9 @@ int run(const cli::CliArguments& arguments) {
     auto bs = method::blackscholes::BlackScholesPricer{};
 
     auto mc_priced_options = method::portfolio::price_with_greeks(european_options, mc); 
-    auto bs_payoffs = method::portfolio::price(european_options, bs); 
 
     auto mc_payoffs = mc_priced_options | std::views::transform(&model::PricedOption::payoff);
+    auto bs_payoffs = method::portfolio::price(european_options, bs); 
     method::portfolio::validate_prices(mc_payoffs, bs_payoffs);
 
     constexpr std::string_view OUTPUT_CSV = "./output.csv";

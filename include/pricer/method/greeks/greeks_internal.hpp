@@ -65,7 +65,10 @@ namespace method::greeks::internal {
     }
 
     double theta(const model::EuropeanOption& option, auto&& pricer) {
-        auto [h, option_upper, option_lower] = create_perturbed_options(option, &model::EuropeanOption::expiry);
+        auto [h, option_upper, option_lower] = create_perturbed_options(
+            option, 
+            &model::EuropeanOption::time_to_expiry
+        );
         return -calculate_finite_difference_first_order(option_upper, option_lower, h, pricer);
     }
 
