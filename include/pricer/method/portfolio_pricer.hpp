@@ -14,6 +14,7 @@
 #include "pricer/method/option_pricer.h"
 #include "pricer/method/greeks/greeks.hpp"
 #include "pricer/util/calc_perf_stats.h"
+#include "pricer/util/mean_absolute_difference.hpp"
 
 using hr_clock_t = std::chrono::high_resolution_clock;
 using ms_t = std::chrono::duration<double, std::milli>;
@@ -97,6 +98,18 @@ auto price_with_greeks(
         | std::ranges::to<std::vector>();
 
     return priced_options;
+}
+
+template<std::ranges::input_range FirstRange, std::ranges::input_range SecondRange>
+double validate_prices(
+    const FirstRange& prices, 
+    const SecondRange& reference_prices
+) {
+    double abs_diff_mean = util::mean_absolute_difference(prices, reference_prices);
+    std::println("{:-^30}", " VALIDATION "); 
+    std::println("Mean |MC-BS|: {:.03f}", abs_diff_mean);
+    std::println("------------------------------");
+    return abs_diff_mean;
 }
 
 }

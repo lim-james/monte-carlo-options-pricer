@@ -4,7 +4,6 @@
 #include <filesystem>
 
 #include "pricer/model/european.h"
-#include "pricer/model/option_greeks.h"
 #include "pricer/model/priced_option.h"
 
 namespace pricer {
