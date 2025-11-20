@@ -1,4 +1,4 @@
-# Monte Carlo Options Pricer [v0.6.0]
+# Monte Carlo Options Pricer [v0.7.0]
 
 ## Quickstart
 
@@ -191,8 +191,8 @@ european call-put option simulation.
 I have documented the vision for this project and the different areas of
 technicalities I would be exploring along the way.
 
-- [v0.7.0] Variance Reduction 
-- [v0.8.0] Performance + Instrumentation
+- [v0.8.0] Variance Reduction 
+- [v0.9.0] Performance + Instrumentation
   - Optimising and playing with different performance tools
-
+- [v1.1.0] Live Feed Data
 
