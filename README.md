@@ -1,4 +1,4 @@
-# Monte Carlo Options Pricer [v0.7.0]
+# Monte Carlo Options Pricer [v0.8.0]
 
 ## Quickstart
 
@@ -13,6 +13,42 @@ cmake --build build
 > through hands-on implementation of pricing models and risk calculations
 
 ## Version Notes
+
+### v0.8.0
+
+- Rather than using static partitioning of fix distribution of work. I have
+opted for a dynamic allocation for load balancing purposes. 
+
+**Simulation Parameters:**
+* **Samples:** 10,000,000
+* **Total Options:** 20
+
+findings for SPMC
+
+| Threads | Throughput (opt/min) | Mean Time (ms) | Uncertainty (±ms) | Mean \|MC-BS\| |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | 155.705 | 385.345 | 3.943 | 0.003 |
+| **2** | 194.704 | 308.160 | 5.210 | 0.005 |
+| **4** | 422.026 | 142.171 | 7.158 | 0.005 |
+| **8** | 634.922 | 94.500 | 5.229 | 0.002 |
+| **12** | 685.282 | 87.555 | 2.601 | 0.007 |
+
+findings for static partitioning 
+
+| Threads | Throughput (opt/min) | Mean Time (ms) | Uncertainty (±ms) | Mean \|MC-BS\| |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | 135.184 | 443.839 | 3.934 | 0.004 |
+| **2** | 256.654 | 233.777 | 6.884 | 0.003 |
+| **4** | 505.557 | 118.681 | 3.391 | 0.006 |
+| **8** | 583.890 | 102.759 | 11.353 | 0.001 |
+| **12** | 521.138 | 115.133 | 11.332 | 0.006 |
+
+
+Performance is more or less similar but we observe that time variance is
+significantly smaller for SPMC at higher threads. Implying that it is able to
+scale whilst maintaining a lower tail latency than static partitioning. Also was
+fun building a simple thread safe queue.
+
 
 ### v0.7.0 
 
