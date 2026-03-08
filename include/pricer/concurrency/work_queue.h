@@ -7,7 +7,7 @@ class WorkQueue {
 private:
 
     std::deque<std::size_t> queue_;
-    std::mutex m_;
+    std::mutex mutex_;
 
 public:
 
