@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include "option_type.h"
 
 namespace pricer::model {
@@ -12,5 +14,7 @@ struct EuropeanOption {
     double implied_volatility;
     double risk_free_rate;
 };
+
+using EuropeanOptionsView = std::span<EuropeanOption>;
 
 }

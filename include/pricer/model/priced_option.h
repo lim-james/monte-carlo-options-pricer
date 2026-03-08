@@ -11,4 +11,6 @@ struct PricedOption {
     EuropeanOption option;
 };
 
+using PricedOptionView = std::span<PricedOption>;
+
 }

@@ -2,12 +2,12 @@
 
 #include "pricer/model/perf_stats.h"
 
-#include <vector>
+#include <span>
 
 namespace pricer {
 namespace util {
 
-model::PerfStats calculate_perf_stats(const std::vector<double>& times);
+model::PerfStats calculate_perf_stats(std::span<double> times);
 
 }
 }

@@ -7,9 +7,9 @@
 namespace pricer {
 namespace util {
 
-inline double standard_deviation(const std::vector<double>& values, double mean) {
+inline double standard_deviation(std::span<double> values, double mean) {
     auto squared_diff = [mean](double x){return (x - mean) * (x - mean);};
-    double variance_sum = std::ranges::fold_left(
+    const double variance_sum = std::ranges::fold_left(
         values | std::views::transform(squared_diff),
         0.0,
         std::plus{}
@@ -17,8 +17,8 @@ inline double standard_deviation(const std::vector<double>& values, double mean)
     return std::sqrt(variance_sum / values.size());
 }
 
-model::PerfStats calculate_perf_stats(const std::vector<double>& times) {
-    std::size_t num_options = times.size();
+model::PerfStats calculate_perf_stats(std::span<double> times) {
+    const std::size_t num_options = times.size();
     model::PerfStats stats;
     stats.total_ms = std::ranges::fold_left(times, 0.0, std::plus{});
     stats.mean_ms  = stats.total_ms / num_options;

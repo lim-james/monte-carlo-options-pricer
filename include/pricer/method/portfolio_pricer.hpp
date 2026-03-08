@@ -24,7 +24,7 @@ namespace method::portfolio {
 
 template<OptionPricer P>
 std::vector<double> price_and_benchmark(
-    const std::vector<model::EuropeanOption>& options, 
+    model::EuropeanOptionsView options, 
     const P& pricer
 ) {
     std::vector<double> payoffs, times;
@@ -53,23 +53,24 @@ std::vector<double> price_and_benchmark(
 
 template<OptionPricer P>
 std::vector<double> price(
-    const std::vector<model::EuropeanOption>& options, 
+    model::EuropeanOptionsView options, 
     const P& pricer
 ) {
+    auto pricing_fn = std::bind_front(&P::price, pricer);
     return options 
-        | std::views::transform(std::bind_front(&P::price, pricer)) 
+        | std::views::transform(pricing_fn) 
         | std::ranges::to<std::vector>();
 }
 
 
 template<OptionPricer P>
 std::vector<model::OptionGreeks> calculate_greeks(
-    const std::vector<model::EuropeanOption>& options, 
+    model::EuropeanOptionsView options, 
     const P& pricer
 ) {
-    auto bound_pricer = std::bind_front(&P::price, std::ref(pricer));
-    auto calculate_greek = [&bound_pricer](auto opt) {
-        return greeks::calculate(opt, bound_pricer);
+    auto pricer_fn = std::bind_front(&P::price, std::ref(pricer));
+    auto calculate_greek = [&pricer_fn](auto opt) {
+        return greeks::calculate(opt, pricer_fn);
     };
 
     return options 
@@ -79,7 +80,7 @@ std::vector<model::OptionGreeks> calculate_greeks(
 
 template<OptionPricer P>
 auto price_with_greeks(
-    const std::vector<model::EuropeanOption>& options, 
+    model::EuropeanOptionsView options, 
     const P& pricer
 ) {
 #ifdef BENCHMARK_OPTIONS
@@ -89,12 +90,13 @@ auto price_with_greeks(
 #endif
 
     auto greeks = calculate_greeks(options, pricer);
+    auto pricing_fn = [](const auto& tuple) {
+        const auto& [option, payoff, greeks] = tuple;
+        return model::PricedOption{payoff, greeks, option};
+    };
 
     auto priced_options = std::views::zip(options, payoffs, greeks) 
-        | std::views::transform([](const auto& tuple) {
-            const auto& [option, payoff, greeks] = tuple;
-            return model::PricedOption{payoff, greeks, option};
-        }) 
+        | std::views::transform(pricing_fn) 
         | std::ranges::to<std::vector>();
 
     return priced_options;

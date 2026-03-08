@@ -14,7 +14,7 @@ std::vector<model::EuropeanOption> load_options_from_csv(const std::filesystem::
 
 void save_priced_options_to_csv(
     const std::filesystem::path& filepath, 
-    const std::vector<model::PricedOption>& options
+    model::PricedOptionView options
 );
 
 }

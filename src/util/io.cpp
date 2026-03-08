@@ -6,6 +6,7 @@
 
 #include "pricer/model/european.h"
 #include "pricer/model/option_greeks.h"
+#include "pricer/model/priced_option.h"
 #include "pricer/util/rapidcsv.h"
 #include "pricer/model/option_type.h"
 
@@ -87,7 +88,7 @@ void write_option_greeks(
 
 void save_priced_options_to_csv(
     const std::filesystem::path& filepath, 
-    const std::vector<model::PricedOption>& options
+    model::PricedOptionView options
 ) {
     rapidcsv::Document csv;    
     write_headers(csv);
